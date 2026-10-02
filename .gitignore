@@ -1,13 +1,11 @@
-node_modules/
-*.db
-*.db-shm
-*.db-wal
+# Database & uploads
+app.db
+app.db-*
+data/
 blobs/
-audits/
-.harness/
-.bun-cache/
-.space-build*/
+
+# Dependencies & build
+node_modules/
 client/dist/
-client/dist-cvm/
-server/dist/
-.env
+standalone/node_modules/
+standalone/data/

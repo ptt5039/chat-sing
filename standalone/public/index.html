@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <!-- Empty inline icon: stops the browser fetching /favicon.ico, which
+         lives outside the artifact's routes and fails auth. -->
+    <link rel="icon" href="data:," />
+    <title>Chat Website</title>
+    <style>
+      #chat-startup-status{min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:#e7f0ed;color:#092427;font:16px/1.5 "Trebuchet MS","Segoe UI",sans-serif}#chat-startup-status strong{font:400 28px/1.15 Georgia,serif}#chat-startup-status p{max-width:560px;margin:0;color:#536d6c}#chat-startup-status code{display:none;max-width:680px;padding:10px 12px;border:1px solid #b7cfca;border-radius:8px;background:#fff;color:#9e2923;overflow-wrap:anywhere;white-space:pre-wrap;font:12px/1.4 ui-monospace,monospace}#chat-startup-status.is-error code{display:block}@media(prefers-color-scheme:dark){#chat-startup-status{background:#071c1f;color:#eef7f4}#chat-startup-status p{color:#9bb6b1}#chat-startup-status code{border-color:#2d5153;background:#16383c;color:#ff9a8d}}
+    </style>
+    <script>
+      (function () {
+        var ready = false;
+        var shownError = false;
+        var root;
+        function messageFrom(reason) {
+          if (reason && typeof reason.message === "string" && reason.message) return reason.message;
+          if (typeof reason === "string" && reason) return reason;
+          return "The application script did not finish loading.";
+        }
+        function showError(reason) {
+          if (ready || shownError) return;
+          shownError = true;
+          root = root || document.querySelector("[data-generated-space-root]");
+          if (!root) return;
+          root.textContent = "";
+          var panel = document.createElement("main");
+          panel.id = "chat-startup-status";
+          panel.className = "is-error";
+          panel.setAttribute("role", "alert");
+          var title = document.createElement("strong");
+          title.textContent = "The chat could not start / Không thể khởi động trò chuyện";
+          var help = document.createElement("p");
+          help.textContent = "Reload the page. If it stays here, send the technical detail below so the problem can be fixed.";
+          var detail = document.createElement("code");
+          detail.textContent = messageFrom(reason);
+          panel.appendChild(title);
+          panel.appendChild(help);
+          panel.appendChild(detail);
+          root.appendChild(panel);
+        }
+        window.__chatStartupReady = function () { ready = true; };
+        window.__chatStartupFail = showError;
+        window.addEventListener("error", function (event) {
+          showError(event.error || event.message || "The application script failed to load.");
+        }, true);
+        window.addEventListener("unhandledrejection", function (event) {
+          showError(event.reason);
+        });
+        window.setTimeout(function () {
+          showError("Startup timed out before the chat interface became ready.");
+        }, 10000);
+
+        // Small compatibility shims for module-capable iPad Safari releases.
+        if (typeof window.globalThis === "undefined") window.globalThis = window;
+        if (typeof window.queueMicrotask !== "function") {
+          window.queueMicrotask = function (callback) { Promise.resolve().then(callback); };
+        }
+        if (typeof Promise !== "undefined" && typeof Promise.allSettled !== "function") {
+          Promise.allSettled = function (items) {
+            return Promise.all(Array.prototype.map.call(items, function (item) {
+              return Promise.resolve(item).then(function (value) {
+                return { status: "fulfilled", value: value };
+              }, function (reason) {
+                return { status: "rejected", reason: reason };
+              });
+            }));
+          };
+        }
+        if (typeof window.AbortController === "undefined") {
+          window.AbortController = function () {
+            var listeners = [];
+            this.signal = {
+              aborted: false,
+              addEventListener: function (name, listener) { if (name === "abort") listeners.push(listener); },
+              removeEventListener: function (name, listener) { if (name === "abort") listeners = listeners.filter(function (item) { return item !== listener; }); }
+            };
+            this.abort = function () {
+              if (this.signal.aborted) return;
+              this.signal.aborted = true;
+              listeners.slice().forEach(function (listener) { listener.call(this.signal); }, this);
+            };
+          };
+        }
+      }());
+    </script>
+    
+  <link rel="stylesheet" crossorigin href="./assets/index-f742vk0p.css"><script type="module" crossorigin src="./assets/index-p73y085a.js"></script></head>
+  <body>
+    <div data-generated-space-root="" data-generated-space-slug="chat-website">
+      <main id="chat-startup-status" role="status">
+        <strong>Starting chat…</strong>
+        <p>Đang khởi động trò chuyện…</p>
+        <code></code>
+      </main>
+    </div>
+    <noscript>This chat needs JavaScript enabled. / Trò chuyện này cần bật JavaScript.</noscript>
+  </body>
+</html>

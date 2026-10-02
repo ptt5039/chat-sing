@@ -1,0 +1,14 @@
+{
+  "name": "chat-sing-standalone",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prestart": "bun ./scripts/install-shims.mjs",
+    "start": "bun ./server.ts"
+  },
+  "dependencies": {
+    "@libsql/client": "0.14.0",
+    "drizzle-orm": "0.45.2",
+    "zod": "4.4.3"
+  }
+}
