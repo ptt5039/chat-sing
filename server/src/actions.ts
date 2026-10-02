@@ -9,16 +9,27 @@ const roomTierSchema = z.enum(["visitor", "member", "mod1", "mod2", "mod3", "bla
 type StoredRoomTier = z.infer<typeof storedRoomTierSchema>;
 type RoomTier = z.infer<typeof roomTierSchema>;
 const emailSchema = z.string().trim().email("Enter a valid email address.").max(254);
+const chatFontFamilySchema = z.enum(["system", "serif", "rounded", "mono", "handwriting"]);
+const chatTextStyleSchema = z.object({
+  fontFamily: chatFontFamilySchema,
+  fontSize: z.number().int().min(12).max(24),
+  bold: z.boolean(),
+  italic: z.boolean(),
+  underline: z.boolean(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+});
 const userViewSchema = z.object({
   id: z.number(),
   name: z.string(),
   displayName: z.string(),
   personalStatus: z.string().nullable().optional(),
+  gender: z.enum(["male", "female"]).nullable().optional(),
   email: z.string().nullable(),
   emailVerified: z.boolean(),
   role: roleSchema,
   hasPassword: z.boolean(),
   singerCoverPhotoUrl: z.string().nullable().optional(),
+  chatTextStyle: chatTextStyleSchema.optional(),
 });
 const doneSchema = z.object({ ok: z.boolean(), error: z.string().optional() });
 const reportCategorySchema = z.enum(["harassment", "hate", "spam", "sexual", "violence", "impersonation", "other"]);
@@ -209,12 +220,21 @@ async function isRoomOwner(ctx: AppCtx, roomId: number, userId: number) {
 async function roomModeratorLevel(ctx: AppCtx, roomId: number, userId: number, role: string) {
   if (isPlatformAdmin(role) || await isRoomOwner(ctx, roomId, userId)) return 3;
   const db = ctx.db<typeof schema>();
+  const room = await db.select({ parentRoomId: schema.rooms.parentRoomId }).from(schema.rooms).where(eq(schema.rooms.id, roomId)).get();
   const membership = await db.select({ roomTier: schema.memberships.roomTier }).from(schema.memberships).where(and(
     eq(schema.memberships.roomId, roomId),
     eq(schema.memberships.userId, userId),
     eq(schema.memberships.state, "active"),
   )).get();
-  return membership ? moderatorLevelForTier(membership.roomTier) : 0;
+  const directLevel = membership ? moderatorLevelForTier(membership.roomTier) : 0;
+  if (!room?.parentRoomId) return directLevel;
+  if (await isRoomOwner(ctx, room.parentRoomId, userId)) return 3;
+  const parentMembership = await db.select({ roomTier: schema.memberships.roomTier }).from(schema.memberships).where(and(
+    eq(schema.memberships.roomId, room.parentRoomId),
+    eq(schema.memberships.userId, userId),
+    eq(schema.memberships.state, "active"),
+  )).get();
+  return Math.max(directLevel, parentMembership ? moderatorLevelForTier(parentMembership.roomTier) : 0);
 }
 
 async function hasRoomModeratorPowers(ctx: AppCtx, roomId: number, userId: number, role: string) {
@@ -325,6 +345,7 @@ async function reconcileMicQueue(ctx: AppCtx, roomId: number) {
     name: schema.users.name,
     memberState: schema.memberships.state,
     muted: schema.memberships.muted,
+    extraSeconds: schema.micQueue.extraSeconds,
   }).from(schema.micQueue)
     .innerJoin(schema.users, eq(schema.micQueue.userId, schema.users.id))
     .leftJoin(schema.memberships, and(eq(schema.memberships.roomId, roomId), eq(schema.memberships.userId, schema.micQueue.userId)))
@@ -343,6 +364,7 @@ async function reconcileMicQueue(ctx: AppCtx, roomId: number) {
     name: schema.users.name,
     memberState: schema.memberships.state,
     muted: schema.memberships.muted,
+    extraSeconds: schema.micQueue.extraSeconds,
   }).from(schema.micQueue)
     .innerJoin(schema.users, eq(schema.micQueue.userId, schema.users.id))
     .leftJoin(schema.memberships, and(eq(schema.memberships.roomId, roomId), eq(schema.memberships.userId, schema.micQueue.userId)))
@@ -354,7 +376,7 @@ async function reconcileMicQueue(ctx: AppCtx, roomId: number) {
       await removeVoiceSession(ctx, roomId, next.userId);
       continue;
     }
-    const endsAt = new Date(now.getTime() + room.defaultMicSeconds * 1000);
+    const endsAt = new Date(now.getTime() + (room.defaultMicSeconds + next.extraSeconds) * 1000);
     // A song belongs to one singer's turn. Clear the room selection before the
     // next turn starts so the incoming singer always begins with fresh music.
     await db.delete(schema.karaokeSelections).where(eq(schema.karaokeSelections.roomId, roomId));
@@ -755,7 +777,7 @@ export const Actions = {
     request: z.object({ token: z.string().min(1) }),
     response: z.object({
       ok: z.boolean(), error: z.string().optional(),
-      users: z.array(z.object({ id: z.number(), name: z.string(), displayName: z.string(), email: z.string().nullable(), role: roleSchema, lastIpAddress: z.string().nullable(), ipLastSeenAt: z.string().nullable(), accountLocked: z.boolean(), ipBlocked: z.boolean(), deletedAt: z.string().nullable(), createdAt: z.string() })),
+      users: z.array(z.object({ id: z.number(), name: z.string(), displayName: z.string(), gender: z.enum(["male", "female"]).nullable(), email: z.string().nullable(), role: roleSchema, lastIpAddress: z.string().nullable(), ipLastSeenAt: z.string().nullable(), accountLocked: z.boolean(), ipBlocked: z.boolean(), deletedAt: z.string().nullable(), createdAt: z.string() })),
       rooms: z.array(z.object({ id: z.number(), name: z.string(), ownerId: z.number(), ownerName: z.string(), level: z.number(), locked: z.boolean(), lockReason: z.string().nullable(), deletedAt: z.string().nullable(), participantCount: z.number(), createdAt: z.string() })),
     }),
     async handler(ctx, args) {
@@ -771,7 +793,7 @@ export const Actions = {
       const blocked = new Set(blockedRows.map((row) => row.ipAddress));
       return {
         ok: true,
-        users: userRows.map((user) => ({ id: user.id, name: user.name, displayName: user.displayName ?? user.name, email: user.email, role: user.role, lastIpAddress: user.lastIpAddress, ipLastSeenAt: user.ipLastSeenAt?.toISOString() ?? null, accountLocked: user.accountLocked, ipBlocked: Boolean(user.lastIpAddress && blocked.has(user.lastIpAddress)), deletedAt: user.deletedAt?.toISOString() ?? null, createdAt: user.createdAt.toISOString() })),
+        users: userRows.map((user) => ({ id: user.id, name: user.name, displayName: user.displayName ?? user.name, gender: user.gender, email: user.email, role: user.role, lastIpAddress: user.lastIpAddress, ipLastSeenAt: user.ipLastSeenAt?.toISOString() ?? null, accountLocked: user.accountLocked, ipBlocked: Boolean(user.lastIpAddress && blocked.has(user.lastIpAddress)), deletedAt: user.deletedAt?.toISOString() ?? null, createdAt: user.createdAt.toISOString() })),
         rooms: roomRows.map((room) => ({ id: room.id, name: room.name, ownerId: room.ownerId, ownerName: room.ownerDisplayName ?? room.ownerName, level: room.level, locked: room.locked, lockReason: room.lockReason, deletedAt: room.deletedAt?.toISOString() ?? null, participantCount: memberRows.filter((member) => member.roomId === room.id).length, createdAt: room.createdAt.toISOString() })),
       };
     },
@@ -938,7 +960,7 @@ export const Actions = {
         locked: schema.rooms.locked,
         lockReason: schema.rooms.lockReason,
         updatedAt: schema.rooms.updatedAt,
-      }).from(schema.rooms).innerJoin(schema.users, eq(schema.rooms.createdBy, schema.users.id)).where(isNull(schema.rooms.deletedAt)).orderBy(desc(schema.rooms.updatedAt)).limit(100);
+      }).from(schema.rooms).innerJoin(schema.users, eq(schema.rooms.createdBy, schema.users.id)).where(and(isNull(schema.rooms.deletedAt), isNull(schema.rooms.parentRoomId))).orderBy(desc(schema.rooms.updatedAt)).limit(100);
       const memberRows = await db.select().from(schema.memberships).where(eq(schema.memberships.state, "active"));
       const now = Date.now();
       const rooms = (await Promise.all(roomRows.map(async (room) => {
@@ -951,7 +973,7 @@ export const Actions = {
           isOwner: room.createdBy === me.id,
           canDelete: isPlatformAdmin(me.role) || room.createdBy === me.id,
           level: room.level,
-          isPrivate: Boolean(room.passwordHash),
+          isPrivate: false,
           locked: room.locked,
           lockReason: room.lockReason,
           participantCount: members.length,
@@ -964,7 +986,7 @@ export const Actions = {
         publicBlobUrl(ctx, me.singerCoverBlobKey),
         getBuyCreditsEnabled(ctx),
       ]);
-      return { ok: true, user: { id: me.id, name: me.name, displayName: me.displayName ?? me.name, personalStatus: me.personalStatus, email: me.email, emailVerified: me.emailVerified, role: me.role, hasPassword: Boolean(me.passwordHash), singerCoverPhotoUrl }, credit, buyCreditsEnabled, rooms };
+      return { ok: true, user: { id: me.id, name: me.name, displayName: me.displayName ?? me.name, personalStatus: me.personalStatus, gender: me.gender, email: me.email, emailVerified: me.emailVerified, role: me.role, hasPassword: Boolean(me.passwordHash), singerCoverPhotoUrl, chatTextStyle: { fontFamily: me.chatFontFamily ?? "system", fontSize: me.chatFontSize ?? 14, bold: me.chatFontBold ?? false, italic: me.chatFontItalic ?? false, underline: me.chatFontUnderline ?? false, color: me.chatFontColor ?? "#092427" } }, credit, buyCreditsEnabled, rooms };
     },
   }),
 
@@ -992,6 +1014,41 @@ export const Actions = {
       const personalStatus = args.personalStatus || null;
       await db.update(schema.users).set({ personalStatus, updatedAt: new Date() }).where(eq(schema.users.id, me.id));
       await logActivity(ctx, { userId: me.id, actorName: me.displayName ?? me.name, action: "personal_status_changed", details: personalStatus ? "Changed their personal status." : "Cleared their personal status." });
+      ctx.invalidateQueries();
+      return { ok: true };
+    },
+  }),
+
+  updateGender: defineAction({
+    request: z.object({ token: z.string(), gender: z.enum(["male", "female"]).nullable() }),
+    response: doneSchema,
+    async handler(ctx, args) {
+      const me = await authenticated(ctx, args.token);
+      if (!me) return { ok: false, error: "This session is no longer valid." };
+      const db = ctx.db<typeof schema>();
+      await db.update(schema.users).set({ gender: args.gender, updatedAt: new Date() }).where(eq(schema.users.id, me.id));
+      await logActivity(ctx, { userId: me.id, actorName: me.displayName ?? me.name, action: "profile_gender_changed", details: args.gender ? "Changed their profile gender." : "Cleared their profile gender." });
+      ctx.invalidateQueries();
+      return { ok: true };
+    },
+  }),
+
+  updateChatTextStyle: defineAction({
+    request: z.object({ token: z.string(), style: chatTextStyleSchema }),
+    response: doneSchema,
+    async handler(ctx, args) {
+      const me = await authenticated(ctx, args.token);
+      if (!me) return { ok: false, error: "This session is no longer valid." };
+      const db = ctx.db<typeof schema>();
+      await db.update(schema.users).set({
+        chatFontFamily: args.style.fontFamily,
+        chatFontSize: args.style.fontSize,
+        chatFontBold: args.style.bold,
+        chatFontItalic: args.style.italic,
+        chatFontUnderline: args.style.underline,
+        chatFontColor: args.style.color.toLowerCase(),
+        updatedAt: new Date(),
+      }).where(eq(schema.users.id, me.id));
       ctx.invalidateQueries();
       return { ok: true };
     },
@@ -1219,7 +1276,7 @@ export const Actions = {
       if (!me) return { ok: false, error: "This session is no longer valid." };
       const db = ctx.db<typeof schema>();
       if (!isPlatformAdmin(me.role)) {
-        const ownedRooms = await db.select({ id: schema.rooms.id }).from(schema.rooms).where(and(eq(schema.rooms.createdBy, me.id), isNull(schema.rooms.deletedAt)));
+        const ownedRooms = await db.select({ id: schema.rooms.id }).from(schema.rooms).where(and(eq(schema.rooms.createdBy, me.id), isNull(schema.rooms.deletedAt), isNull(schema.rooms.parentRoomId)));
         if (ownedRooms.length >= 10) return { ok: false, error: "You can own up to 10 rooms. Delete one of your rooms before creating another." };
       }
       const result = await db.insert(schema.rooms).values({ name: args.name, createdBy: me.id }).returning({ id: schema.rooms.id });
@@ -1229,6 +1286,34 @@ export const Actions = {
       await addEvent(ctx, room.id, `${me.name} opened the room.`, me.id);
       ctx.invalidateQueries();
       return { ok: true, roomId: room.id };
+    },
+  }),
+
+  createSubroom: defineAction({
+    request: z.object({ token: z.string(), parentRoomId: z.number().int().positive(), name: z.string().trim().min(2).max(42), password: z.string().max(72).optional() }),
+    response: z.object({ ok: z.boolean(), error: z.string().optional(), roomId: z.number().optional() }),
+    privileged: [Privileged.hashPassword],
+    async handler(ctx, args) {
+      const me = await authenticated(ctx, args.token);
+      if (!me) return { ok: false, error: "This session is no longer valid." };
+      const db = ctx.db<typeof schema>();
+      const parent = await db.select({ id: schema.rooms.id, parentRoomId: schema.rooms.parentRoomId, defaultMicSeconds: schema.rooms.defaultMicSeconds, deletedAt: schema.rooms.deletedAt }).from(schema.rooms).where(eq(schema.rooms.id, args.parentRoomId)).get();
+      if (!parent || parent.deletedAt || parent.parentRoomId) return { ok: false, error: "Parent room not found." };
+      const membership = await db.select({ id: schema.memberships.id }).from(schema.memberships).where(and(eq(schema.memberships.roomId, parent.id), eq(schema.memberships.userId, me.id), eq(schema.memberships.state, "active"))).get();
+      if (!membership) return { ok: false, error: "Join the main room before creating a subroom." };
+      if (await roomModeratorLevel(ctx, parent.id, me.id, me.role) < 3) return { ok: false, error: "Room administrator, owner, or system administrator access required." };
+      const existing = await db.select({ id: schema.rooms.id }).from(schema.rooms).where(and(eq(schema.rooms.parentRoomId, parent.id), isNull(schema.rooms.deletedAt)));
+      if (existing.length >= 20) return { ok: false, error: "This room can have up to 20 subrooms." };
+      const password = args.password?.trim() ?? "";
+      if (password.length > 0 && password.length < 4) return { ok: false, error: "Use at least 4 characters for a room password." };
+      const passwordHash = password ? (await ctx.executePrivileged(Privileged.hashPassword, { password })).hash : null;
+      const created = await db.insert(schema.rooms).values({ name: args.name, createdBy: me.id, parentRoomId: parent.id, defaultMicSeconds: parent.defaultMicSeconds, passwordHash }).returning({ id: schema.rooms.id });
+      const subroom = created[0];
+      if (!subroom) return { ok: false, error: "Could not create the subroom." };
+      await db.insert(schema.memberships).values({ roomId: subroom.id, userId: me.id, state: "active", roomTier: "mod3", moderatorLevel: 3 });
+      await logActivity(ctx, { userId: me.id, actorName: me.displayName ?? me.name, roomId: parent.id, action: "subroom_created", details: `Created subroom ${args.name}.` });
+      ctx.invalidateQueries();
+      return { ok: true, roomId: subroom.id };
     },
   }),
 
@@ -1275,9 +1360,10 @@ export const Actions = {
       const me = await authenticated(ctx, args.token);
       if (!me) return { ok: false, error: "Session expired." };
       const db = ctx.db<typeof schema>();
-      const room = await db.select({ createdBy: schema.rooms.createdBy }).from(schema.rooms).where(eq(schema.rooms.id, args.roomId)).get();
+      const room = await db.select({ createdBy: schema.rooms.createdBy, parentRoomId: schema.rooms.parentRoomId }).from(schema.rooms).where(eq(schema.rooms.id, args.roomId)).get();
       if (!room) return { ok: false, error: "Room not found." };
-      if (room.createdBy !== me.id) return { ok: false, error: "Only the room owner can change the room password." };
+      if (!room.parentRoomId) return { ok: false, error: "Passwords are only available for subrooms." };
+      if (room.createdBy !== me.id) return { ok: false, error: "Only the subroom owner can change the subroom password." };
       const password = args.password.trim();
       if (password.length > 0 && password.length < 4) return { ok: false, error: "Use at least 4 characters for a room password." };
       const passwordHash = password ? (await ctx.executePrivileged(Privileged.hashPassword, { password })).hash : null;
@@ -1300,16 +1386,23 @@ export const Actions = {
       if (room.locked && !isPlatformAdmin(me.role)) return { ok: false, error: room.lockReason ? `This room is locked: ${room.lockReason}` : "This room is locked by an administrator." };
       const roomBan = await db.select({ id: schema.roomBans.id }).from(schema.roomBans).where(and(eq(schema.roomBans.roomId, args.roomId), eq(schema.roomBans.userId, me.id))).get();
       if (roomBan) return { ok: false, error: "You are banned from this room." };
-      if (room.passwordHash) {
-        if (!args.password) return { ok: false, error: "Enter the room password." };
+      if (room.parentRoomId && room.passwordHash) {
+        if (!args.password) return { ok: false, error: "Enter the subroom password." };
         const { valid } = await ctx.executePrivileged(Privileged.verifyPassword, { password: args.password, hash: room.passwordHash });
-        if (!valid) return { ok: false, error: "That room password is incorrect." };
+        if (!valid) return { ok: false, error: "That subroom password is incorrect." };
+      }
+      let inheritedTier: StoredRoomTier = "visitor";
+      if (room.parentRoomId) {
+        const parentMembership = await db.select({ roomTier: schema.memberships.roomTier }).from(schema.memberships).where(and(eq(schema.memberships.roomId, room.parentRoomId), eq(schema.memberships.userId, me.id), eq(schema.memberships.state, "active"))).get();
+        if (!parentMembership) return { ok: false, error: "Join the main room before entering a subroom." };
+        const parentOwner = await isRoomOwner(ctx, room.parentRoomId, me.id);
+        inheritedTier = parentOwner ? "blackshirt" : parentMembership.roomTier;
       }
       const existing = await db.select().from(schema.memberships).where(and(eq(schema.memberships.roomId, args.roomId), eq(schema.memberships.userId, me.id))).get();
       if (existing) {
-        await db.update(schema.memberships).set({ state: "active", muted: false, voiceActive: false, joinedAt: new Date(), lastSeenAt: new Date() }).where(eq(schema.memberships.id, existing.id));
+        await db.update(schema.memberships).set({ state: "active", muted: false, voiceActive: false, roomTier: room.parentRoomId ? inheritedTier : existing.roomTier, moderatorLevel: room.parentRoomId ? moderatorLevelForTier(inheritedTier) : existing.moderatorLevel, joinedAt: new Date(), lastSeenAt: new Date() }).where(eq(schema.memberships.id, existing.id));
       } else {
-        await db.insert(schema.memberships).values({ roomId: args.roomId, userId: me.id });
+        await db.insert(schema.memberships).values({ roomId: args.roomId, userId: me.id, roomTier: inheritedTier, moderatorLevel: moderatorLevelForTier(inheritedTier) });
       }
       const activeMembers = await db.select({ id: schema.memberships.id }).from(schema.memberships).where(and(eq(schema.memberships.roomId, args.roomId), eq(schema.memberships.state, "active")));
       if (activeMembers.length >= 50 && room.level < 2) await db.update(schema.rooms).set({ level: 2, leveledAt: new Date(), updatedAt: new Date() }).where(eq(schema.rooms.id, args.roomId));
@@ -1328,6 +1421,7 @@ export const Actions = {
       const db = ctx.db<typeof schema>();
       await db.update(schema.memberships).set({ state: "left", voiceActive: false, lastSeenAt: new Date() }).where(and(eq(schema.memberships.roomId, args.roomId), eq(schema.memberships.userId, me.id)));
       await db.delete(schema.micQueue).where(and(eq(schema.micQueue.roomId, args.roomId), eq(schema.micQueue.userId, me.id)));
+      await db.update(schema.rooms).set({ micHoldByUserId: null }).where(and(eq(schema.rooms.id, args.roomId), eq(schema.rooms.micHoldByUserId, me.id)));
       await addEvent(ctx, args.roomId, `${me.name} left.`, me.id);
       await reconcileMicQueue(ctx, args.roomId);
       ctx.invalidateQueries();
@@ -1339,11 +1433,12 @@ export const Actions = {
     request: z.object({ token: z.string(), roomId: z.number().int().positive() }),
     response: z.object({
       ok: z.boolean(), error: z.string().optional(),
-      room: z.object({ id: z.number(), name: z.string(), profileImageUrl: z.string().nullable(), chatBackground: z.string(), chatBackgroundImageUrl: z.string().nullable(), chatBackgroundImageFit: z.enum(["contain", "cover"]), chatBackgroundFade: z.number(), chatBackgroundPreset: z.enum(["kawaii-cats", "dreamy-kitten", "pastel-clouds", "pastel-daisies"]).nullable(), ownerId: z.number(), ownerName: z.string(), defaultMicSeconds: z.number(), micMode: z.enum(["free", "queue"]), level: z.number(), isPrivate: z.boolean() }).optional(),
+      room: z.object({ id: z.number(), name: z.string(), profileImageUrl: z.string().nullable(), chatBackground: z.string(), chatBackgroundImageUrl: z.string().nullable(), chatBackgroundImageFit: z.enum(["contain", "cover"]), chatBackgroundFade: z.number(), chatBackgroundPreset: z.enum(["kawaii-cats", "dreamy-kitten", "pastel-clouds", "pastel-daisies"]).nullable(), ownerId: z.number(), ownerName: z.string(), parentRoomId: z.number().nullable(), parentRoomName: z.string().nullable(), defaultMicSeconds: z.number(), micMode: z.enum(["free", "queue"]), queuePaused: z.boolean(), micHoldByUserId: z.number().nullable(), level: z.number(), isPrivate: z.boolean() }).optional(),
+      subrooms: z.array(z.object({ id: z.number(), name: z.string(), micMode: z.enum(["free", "queue"]), isPrivate: z.boolean(), onlineCount: z.number() })).optional(),
       me: z.object({ id: z.number(), name: z.string(), role: roleSchema, roomTier: roomTierSchema, moderatorLevel: z.number(), isOwner: z.boolean(), muted: z.boolean(), creditBalance: z.number() }).optional(),
-      participants: z.array(z.object({ id: z.number(), name: z.string(), singerCoverPhotoUrl: z.string().nullable(), role: roleSchema, roomTier: roomTierSchema, moderatorLevel: z.number(), isOwner: z.boolean(), muted: z.boolean(), voiceActive: z.boolean(), online: z.boolean(), friendshipStatus: z.enum(["none", "outgoing", "incoming", "friends"]), friendRequestId: z.number().nullable() })),
+      participants: z.array(z.object({ id: z.number(), name: z.string(), gender: z.enum(["male", "female"]).nullable(), singerCoverPhotoUrl: z.string().nullable(), role: roleSchema, roomTier: roomTierSchema, moderatorLevel: z.number(), isOwner: z.boolean(), muted: z.boolean(), voiceActive: z.boolean(), online: z.boolean(), friendshipStatus: z.enum(["none", "outgoing", "incoming", "friends"]), friendRequestId: z.number().nullable() })),
       bans: z.array(z.object({ userId: z.number(), name: z.string(), bannedByName: z.string().nullable(), createdAt: z.string() })).optional(),
-      messages: z.array(z.object({ id: z.number(), userId: z.number().nullable(), name: z.string().nullable(), kind: z.enum(["message", "event"]), body: z.string(), imageUrl: z.string().nullable(), createdAt: z.string() })), 
+      messages: z.array(z.object({ id: z.number(), userId: z.number().nullable(), name: z.string().nullable(), kind: z.enum(["message", "event"]), body: z.string(), imageUrl: z.string().nullable(), createdAt: z.string(), textStyle: chatTextStyleSchema.nullable() })), 
       queue: z.array(z.object({ id: z.number(), userId: z.number(), name: z.string(), position: z.number(), isCurrent: z.boolean(), endsAt: z.string().nullable(), remainingSeconds: z.number().nullable() })).optional(),
       heart: z.object({ count: z.number(), availableAt: z.string().nullable() }).nullable().optional(),
     }),
@@ -1360,12 +1455,17 @@ export const Actions = {
       const credit = await accrueOnlineCredit(ctx, me.id);
       await reconcileMicQueue(ctx, args.roomId);
       await ensureRoomLevel(ctx, args.roomId);
-      const room = await db.select({ id: schema.rooms.id, name: schema.rooms.name, profileImageBlobKey: schema.rooms.profileImageBlobKey, chatBackground: schema.rooms.chatBackground, chatBackgroundImageBlobKey: schema.rooms.chatBackgroundImageBlobKey, chatBackgroundImageFit: schema.rooms.chatBackgroundImageFit, chatBackgroundFade: schema.rooms.chatBackgroundFade, chatBackgroundPreset: schema.rooms.chatBackgroundPreset, ownerId: schema.rooms.createdBy, ownerName: schema.users.name, ownerDisplayName: schema.users.displayName, defaultMicSeconds: schema.rooms.defaultMicSeconds, micMode: schema.rooms.micMode, level: schema.rooms.level, passwordHash: schema.rooms.passwordHash }).from(schema.rooms).innerJoin(schema.users, eq(schema.rooms.createdBy, schema.users.id)).where(eq(schema.rooms.id, args.roomId)).get();
+      const room = await db.select({ id: schema.rooms.id, name: schema.rooms.name, profileImageBlobKey: schema.rooms.profileImageBlobKey, chatBackground: schema.rooms.chatBackground, chatBackgroundImageBlobKey: schema.rooms.chatBackgroundImageBlobKey, chatBackgroundImageFit: schema.rooms.chatBackgroundImageFit, chatBackgroundFade: schema.rooms.chatBackgroundFade, chatBackgroundPreset: schema.rooms.chatBackgroundPreset, ownerId: schema.rooms.createdBy, ownerName: schema.users.name, ownerDisplayName: schema.users.displayName, parentRoomId: schema.rooms.parentRoomId, defaultMicSeconds: schema.rooms.defaultMicSeconds, micMode: schema.rooms.micMode, queuePaused: schema.rooms.queuePaused, micHoldByUserId: schema.rooms.micHoldByUserId, level: schema.rooms.level, passwordHash: schema.rooms.passwordHash }).from(schema.rooms).innerJoin(schema.users, eq(schema.rooms.createdBy, schema.users.id)).where(eq(schema.rooms.id, args.roomId)).get();
       if (!room) return { ok: false, error: "Room not found.", participants: [], messages: [] };
-      const memberRows = await db.select({ id: schema.users.id, username: schema.users.name, defaultDisplayName: schema.users.displayName, singerCoverBlobKey: schema.users.singerCoverBlobKey, roomDisplayName: schema.memberships.displayName, role: schema.users.role, roomTier: schema.memberships.roomTier, moderatorLevel: schema.memberships.moderatorLevel, muted: schema.memberships.muted, voiceActive: schema.memberships.voiceActive, lastSeenAt: schema.memberships.lastSeenAt })
+      const parentRoom = room.parentRoomId ? await db.select({ name: schema.rooms.name }).from(schema.rooms).where(eq(schema.rooms.id, room.parentRoomId)).get() : undefined;
+      const childRooms = !room.parentRoomId ? await db.select({ id: schema.rooms.id, name: schema.rooms.name, micMode: schema.rooms.micMode, passwordHash: schema.rooms.passwordHash }).from(schema.rooms).where(and(eq(schema.rooms.parentRoomId, room.id), isNull(schema.rooms.deletedAt))).orderBy(asc(schema.rooms.createdAt)) : [];
+      const childMemberships = childRooms.length > 0 ? await db.select({ roomId: schema.memberships.roomId, lastSeenAt: schema.memberships.lastSeenAt }).from(schema.memberships).where(eq(schema.memberships.state, "active")) : [];
+      const childNow = Date.now();
+      const subrooms = childRooms.map((child) => ({ id: child.id, name: child.name, micMode: child.micMode, isPrivate: Boolean(child.passwordHash), onlineCount: childMemberships.filter((item) => item.roomId === child.id && childNow - item.lastSeenAt.getTime() < 18000).length }));
+      const memberRows = await db.select({ id: schema.users.id, username: schema.users.name, defaultDisplayName: schema.users.displayName, gender: schema.users.gender, singerCoverBlobKey: schema.users.singerCoverBlobKey, roomDisplayName: schema.memberships.displayName, role: schema.users.role, roomTier: schema.memberships.roomTier, moderatorLevel: schema.memberships.moderatorLevel, muted: schema.memberships.muted, voiceActive: schema.memberships.voiceActive, lastSeenAt: schema.memberships.lastSeenAt })
         .from(schema.memberships).innerJoin(schema.users, eq(schema.memberships.userId, schema.users.id))
         .where(and(eq(schema.memberships.roomId, args.roomId), eq(schema.memberships.state, "active"))).orderBy(asc(schema.users.name));
-      const rawMessages = await db.select({ id: schema.messages.id, userId: schema.messages.userId, username: schema.users.name, defaultDisplayName: schema.users.displayName, roomDisplayName: schema.memberships.displayName, kind: schema.messages.kind, body: schema.messages.body, imageBlobKey: schema.messages.imageBlobKey, createdAt: schema.messages.createdAt })
+      const rawMessages = await db.select({ id: schema.messages.id, userId: schema.messages.userId, username: schema.users.name, defaultDisplayName: schema.users.displayName, roomDisplayName: schema.memberships.displayName, kind: schema.messages.kind, body: schema.messages.body, imageBlobKey: schema.messages.imageBlobKey, createdAt: schema.messages.createdAt, chatFontFamily: schema.users.chatFontFamily, chatFontSize: schema.users.chatFontSize, chatFontBold: schema.users.chatFontBold, chatFontItalic: schema.users.chatFontItalic, chatFontUnderline: schema.users.chatFontUnderline, chatFontColor: schema.users.chatFontColor })
         .from(schema.messages).leftJoin(schema.users, eq(schema.messages.userId, schema.users.id))
         .leftJoin(schema.memberships, and(eq(schema.memberships.roomId, args.roomId), eq(schema.memberships.userId, schema.messages.userId)))
         .where(eq(schema.messages.roomId, args.roomId)).orderBy(desc(schema.messages.id)).limit(120);
@@ -1420,6 +1520,7 @@ export const Actions = {
       const participantViews = await Promise.all(memberRows.map(async (p) => ({
         id: p.id,
         name: p.roomDisplayName ?? p.defaultDisplayName ?? p.username,
+        gender: p.gender,
         singerCoverPhotoUrl: await publicBlobUrl(ctx, p.singerCoverBlobKey),
         role: isPlatformAdmin(p.role) ? p.role : moderatorLevelForTier(p.roomTier) > 0 ? "moderator" as const : "user" as const,
         roomTier: effectiveRoomTier(p.role, room.ownerId === p.id, p.roomTier),
@@ -1433,11 +1534,12 @@ export const Actions = {
       })));
       return {
         ok: true,
-        room: { id: room.id, name: room.name, profileImageUrl: roomProfileImageUrl, chatBackground: room.chatBackground, chatBackgroundImageUrl, chatBackgroundImageFit: room.chatBackgroundImageFit, chatBackgroundFade: room.chatBackgroundFade, chatBackgroundPreset: room.chatBackgroundPreset, ownerId: room.ownerId, ownerName: room.ownerDisplayName ?? room.ownerName, defaultMicSeconds: room.defaultMicSeconds, micMode: room.micMode, level: room.level, isPrivate: Boolean(room.passwordHash) },
+        room: { id: room.id, name: room.name, profileImageUrl: roomProfileImageUrl, chatBackground: room.chatBackground, chatBackgroundImageUrl, chatBackgroundImageFit: room.chatBackgroundImageFit, chatBackgroundFade: room.chatBackgroundFade, chatBackgroundPreset: room.chatBackgroundPreset, ownerId: room.ownerId, ownerName: room.ownerDisplayName ?? room.ownerName, parentRoomId: room.parentRoomId, parentRoomName: parentRoom?.name ?? null, defaultMicSeconds: room.defaultMicSeconds, micMode: room.micMode, queuePaused: room.queuePaused, micHoldByUserId: room.micHoldByUserId, level: room.level, isPrivate: Boolean(room.parentRoomId && room.passwordHash) },
+        subrooms,
         me: { id: me.id, name: membership.displayName ?? me.displayName ?? me.name, role: isPlatformAdmin(me.role) ? me.role : moderatorLevelForTier(membership.roomTier) > 0 ? "moderator" as const : "user" as const, roomTier: effectiveRoomTier(me.role, room.ownerId === me.id, membership.roomTier), moderatorLevel: moderatorLevelForTier(membership.roomTier), isOwner: room.ownerId === me.id, muted: membership.muted, creditBalance: credit.balance },
         participants: participantViews,
         bans,
-        messages: await Promise.all(rawMessages.reverse().filter((message) => message.kind === "message" || isVisibleLegacyRoomActivity(message.body)).map(async (m) => ({ id: m.id, userId: m.userId, name: m.userId === null ? null : m.roomDisplayName ?? m.defaultDisplayName ?? m.username, kind: m.kind, body: m.body, imageUrl: await privateBlobUrl(ctx, m.imageBlobKey), createdAt: m.createdAt.toISOString() }))),
+        messages: await Promise.all(rawMessages.reverse().filter((message) => message.kind === "message" || isVisibleLegacyRoomActivity(message.body)).map(async (m) => ({ id: m.id, userId: m.userId, name: m.userId === null ? null : m.roomDisplayName ?? m.defaultDisplayName ?? m.username, kind: m.kind, body: m.body, imageUrl: await privateBlobUrl(ctx, m.imageBlobKey), createdAt: m.createdAt.toISOString(), textStyle: m.userId === null ? null : { fontFamily: m.chatFontFamily ?? "system", fontSize: m.chatFontSize ?? 14, bold: m.chatFontBold ?? false, italic: m.chatFontItalic ?? false, underline: m.chatFontUnderline ?? false, color: m.chatFontColor && /^#[0-9a-fA-F]{6}$/.test(m.chatFontColor) ? m.chatFontColor : "#092427" } }))),
         queue: queueRows.map((entry, index) => ({ id: entry.id, userId: entry.userId, name: entry.roomDisplayName ?? entry.defaultDisplayName ?? entry.username, position: index + 1, isCurrent: index === 0, endsAt: entry.endsAt?.toISOString() ?? null, remainingSeconds: entry.endsAt ? Math.max(0, Math.ceil((entry.endsAt.getTime() - now) / 1000)) : null })),
         heart,
       };
@@ -1669,6 +1771,51 @@ export const Actions = {
     },
   }),
 
+  setQueuePaused: defineAction({
+    request: z.object({ token: z.string(), roomId: z.number().int().positive(), paused: z.boolean() }),
+    response: doneSchema,
+    async handler(ctx, args) {
+      const actor = await authenticated(ctx, args.token);
+      if (!actor) return { ok: false, error: "Session expired." };
+      if (await roomModeratorLevel(ctx, args.roomId, actor.id, actor.role) < 1) return { ok: false, error: "Collaborator, room administrator, or owner access required." };
+      const db = ctx.db<typeof schema>();
+      const membership = await db.select({ id: schema.memberships.id }).from(schema.memberships).where(and(eq(schema.memberships.roomId, args.roomId), eq(schema.memberships.userId, actor.id), eq(schema.memberships.state, "active"))).get();
+      if (!membership) return { ok: false, error: "Join the room before managing its mic queue." };
+      const room = await db.select({ micMode: schema.rooms.micMode }).from(schema.rooms).where(eq(schema.rooms.id, args.roomId)).get();
+      if (!room) return { ok: false, error: "Room not found." };
+      if (room.micMode !== "queue") return { ok: false, error: "Queue controls are only available in Queue Mode." };
+      await db.update(schema.rooms).set({ queuePaused: args.paused, updatedAt: new Date() }).where(eq(schema.rooms.id, args.roomId));
+      await addEvent(ctx, args.roomId, `${actor.name} ${args.paused ? "paused" : "resumed"} the mic queue.`, actor.id);
+      ctx.invalidateQueries();
+      return { ok: true };
+    },
+  }),
+
+  setMicHold: defineAction({
+    request: z.object({ token: z.string(), roomId: z.number().int().positive(), active: z.boolean() }),
+    response: doneSchema,
+    async handler(ctx, args) {
+      const actor = await authenticated(ctx, args.token);
+      if (!actor) return { ok: false, error: "Session expired." };
+      if (await roomModeratorLevel(ctx, args.roomId, actor.id, actor.role) < 1) return { ok: false, error: "Collaborator, room administrator, or owner access required." };
+      const db = ctx.db<typeof schema>();
+      const membership = await db.select({ id: schema.memberships.id }).from(schema.memberships).where(and(eq(schema.memberships.roomId, args.roomId), eq(schema.memberships.userId, actor.id), eq(schema.memberships.state, "active"))).get();
+      if (!membership) return { ok: false, error: "Join the room before holding the microphone." };
+      const room = await db.select({ micMode: schema.rooms.micMode }).from(schema.rooms).where(eq(schema.rooms.id, args.roomId)).get();
+      if (!room) return { ok: false, error: "Room not found." };
+      if (room.micMode !== "queue") return { ok: false, error: "Mic hold is only available in Queue Mode." };
+      await db.update(schema.rooms).set({ micHoldByUserId: args.active ? actor.id : null, updatedAt: new Date() }).where(eq(schema.rooms.id, args.roomId));
+      if (args.active) {
+        await reconcileMicQueue(ctx, args.roomId);
+        const singer = await db.select({ userId: schema.micQueue.userId }).from(schema.micQueue).where(and(eq(schema.micQueue.roomId, args.roomId), isNotNull(schema.micQueue.startedAt))).get();
+        if (singer && singer.userId !== actor.id) await db.update(schema.memberships).set({ voiceActive: false }).where(and(eq(schema.memberships.roomId, args.roomId), eq(schema.memberships.userId, singer.userId)));
+      }
+      await addEvent(ctx, args.roomId, `${actor.name} ${args.active ? "held" : "released"} the microphone.`, actor.id);
+      ctx.invalidateQueries();
+      return { ok: true };
+    },
+  }),
+
   joinMicQueue: defineAction({
     request: z.object({ token: z.string(), roomId: z.number().int().positive() }),
     response: doneSchema,
@@ -1683,9 +1830,10 @@ export const Actions = {
       )).get();
       if (!member) return { ok: false, error: "Join the room before joining the mic queue." };
       if (member.muted) return { ok: false, error: "A moderator has muted your microphone." };
-      const room = await db.select({ micMode: schema.rooms.micMode }).from(schema.rooms).where(eq(schema.rooms.id, args.roomId)).get();
+      const room = await db.select({ micMode: schema.rooms.micMode, queuePaused: schema.rooms.queuePaused }).from(schema.rooms).where(eq(schema.rooms.id, args.roomId)).get();
       if (!room) return { ok: false, error: "Room not found." };
       if (room.micMode === "free") return { ok: false, error: "This room is in Free Mode. Turn on your microphone directly." };
+      if (room.queuePaused) return { ok: false, error: "The mic queue is temporarily paused." };
       await reconcileMicQueue(ctx, args.roomId);
       const existing = await db.select({ id: schema.micQueue.id }).from(schema.micQueue).where(and(
         eq(schema.micQueue.roomId, args.roomId),
@@ -1739,7 +1887,7 @@ export const Actions = {
       const moderatorLevel = await roomModeratorLevel(ctx, args.roomId, actor.id, actor.role);
       if (moderatorLevel < 1) return { ok: false, error: "Collaborator, room administrator, or owner access required." };
       if (args.action === "moveUp" && moderatorLevel < 1) return { ok: false, error: "Collaborator or higher access required." };
-      if (["add", "singNow", "remove"].includes(args.action) && moderatorLevel < 2) return { ok: false, error: "Room administrator or higher access required." };
+      if (["add", "singNow"].includes(args.action) && moderatorLevel < 2) return { ok: false, error: "Room administrator or higher access required." };
       const db = ctx.db<typeof schema>();
       const actorMembership = await db.select({ id: schema.memberships.id }).from(schema.memberships).where(and(
         eq(schema.memberships.roomId, args.roomId),
@@ -1761,6 +1909,10 @@ export const Actions = {
       }
 
       if (!args.targetUserId) return { ok: false, error: "Choose a person first." };
+      if (args.action === "add") {
+        const roomState = await db.select({ queuePaused: schema.rooms.queuePaused }).from(schema.rooms).where(eq(schema.rooms.id, args.roomId)).get();
+        if (roomState?.queuePaused) return { ok: false, error: "The mic queue is temporarily paused." };
+      }
       const target = await db.select({
         id: schema.users.id,
         name: schema.users.name,
@@ -1855,7 +2007,7 @@ export const Actions = {
       const room = await db.select({ id: schema.rooms.id, micMode: schema.rooms.micMode }).from(schema.rooms).where(eq(schema.rooms.id, args.roomId)).get();
       if (!room) return { ok: false, error: "Room not found." };
       if (room.micMode === args.mode) return { ok: true };
-      await db.update(schema.rooms).set({ micMode: args.mode, updatedAt: new Date() }).where(eq(schema.rooms.id, args.roomId));
+      await db.update(schema.rooms).set({ micMode: args.mode, queuePaused: args.mode === "free" ? false : undefined, micHoldByUserId: args.mode === "free" ? null : undefined, updatedAt: new Date() }).where(eq(schema.rooms.id, args.roomId));
       if (args.mode === "free") {
         await db.delete(schema.micQueue).where(eq(schema.micQueue.roomId, args.roomId));
       }
@@ -1878,6 +2030,27 @@ export const Actions = {
       if (!room) return { ok: false, error: "Room not found." };
       await db.update(schema.rooms).set({ defaultMicSeconds: args.durationMinutes * 60, updatedAt: new Date() }).where(eq(schema.rooms.id, args.roomId));
       await addEvent(ctx, args.roomId, `${actor.name} set mic turns to ${args.durationMinutes} minute${args.durationMinutes === 1 ? "" : "s"}.`, actor.id);
+      ctx.invalidateQueries();
+      return { ok: true };
+    },
+  }),
+
+  addQueueTurnTime: defineAction({
+    request: z.object({ token: z.string(), roomId: z.number().int().positive(), targetUserId: z.number().int().positive() }),
+    response: doneSchema,
+    async handler(ctx, args) {
+      const actor = await authenticated(ctx, args.token);
+      if (!actor) return { ok: false, error: "Session expired." };
+      if (await roomModeratorLevel(ctx, args.roomId, actor.id, actor.role) < 1) return { ok: false, error: "Collaborator, room administrator, or owner access required." };
+      const db = ctx.db<typeof schema>();
+      await reconcileMicQueue(ctx, args.roomId);
+      const room = await db.select({ defaultMicSeconds: schema.rooms.defaultMicSeconds }).from(schema.rooms).where(eq(schema.rooms.id, args.roomId)).get();
+      if (!room) return { ok: false, error: "Room not found." };
+      const entry = await db.select({ id: schema.micQueue.id, endsAt: schema.micQueue.endsAt, extraSeconds: schema.micQueue.extraSeconds, name: schema.users.name }).from(schema.micQueue).innerJoin(schema.users, eq(schema.micQueue.userId, schema.users.id)).where(and(eq(schema.micQueue.roomId, args.roomId), eq(schema.micQueue.userId, args.targetUserId))).get();
+      if (!entry) return { ok: false, error: "That person is not in the mic queue." };
+      if (entry.endsAt) await db.update(schema.micQueue).set({ endsAt: new Date(entry.endsAt.getTime() + room.defaultMicSeconds * 1000) }).where(eq(schema.micQueue.id, entry.id));
+      else await db.update(schema.micQueue).set({ extraSeconds: entry.extraSeconds + room.defaultMicSeconds }).where(eq(schema.micQueue.id, entry.id));
+      await addEvent(ctx, args.roomId, `${actor.name} added one full turn to ${entry.name}.`, actor.id);
       ctx.invalidateQueries();
       return { ok: true };
     },
@@ -1915,12 +2088,13 @@ export const Actions = {
       if (!member) return { ok: false, error: "Join the room first." };
       if (args.active && member.muted) return { ok: false, error: "A moderator has muted your microphone." };
       if (args.active) {
-        const room = await db.select({ micMode: schema.rooms.micMode }).from(schema.rooms).where(eq(schema.rooms.id, args.roomId)).get();
+        const room = await db.select({ micMode: schema.rooms.micMode, micHoldByUserId: schema.rooms.micHoldByUserId }).from(schema.rooms).where(eq(schema.rooms.id, args.roomId)).get();
         if (!room) return { ok: false, error: "Room not found." };
         if (room.micMode === "queue") {
           await reconcileMicQueue(ctx, args.roomId);
           const current = await db.select({ userId: schema.micQueue.userId }).from(schema.micQueue)
             .where(and(eq(schema.micQueue.roomId, args.roomId), isNotNull(schema.micQueue.startedAt))).orderBy(asc(schema.micQueue.startedAt)).get();
+          if (current?.userId === me.id && room.micHoldByUserId && room.micHoldByUserId !== me.id) return { ok: false, error: "A moderator is holding the microphone." };
           if ((!current || current.userId !== me.id) && !await hasRoomModeratorPowers(ctx, args.roomId, me.id, me.role)) {
             return { ok: false, error: "Join the queue and wait for your turn before starting the microphone." };
           }
