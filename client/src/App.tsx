@@ -11,6 +11,22 @@ const TOKEN_KEY = "radio-room-session";
 type Locale = "en" | "vi";
 type SupportedImageMime = "image/jpeg" | "image/png" | "image/webp";
 type ReportAttachmentMime = SupportedImageMime | "image/gif" | "application/pdf" | "text/plain" | "application/msword" | "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+type ChatFontFamily = "system" | "serif" | "rounded" | "mono" | "handwriting";
+type ChatTextStyle = { fontFamily: ChatFontFamily; fontSize: number; bold: boolean; italic: boolean; underline: boolean; color: string };
+
+const DEFAULT_CHAT_TEXT_STYLE: ChatTextStyle = { fontFamily: "system", fontSize: 14, bold: false, italic: false, underline: false, color: "#092427" };
+const CHAT_FONT_STACKS: Record<ChatFontFamily, string> = {
+  system: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  serif: "Georgia, 'Times New Roman', serif",
+  rounded: "'Trebuchet MS', 'Arial Rounded MT Bold', sans-serif",
+  mono: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+  handwriting: "'Comic Sans MS', 'Bradley Hand', cursive",
+};
+
+function chatTextCss(style: ChatTextStyle | null | undefined): CSSProperties {
+  const current = style ?? DEFAULT_CHAT_TEXT_STYLE;
+  return { fontFamily: CHAT_FONT_STACKS[current.fontFamily], fontSize: `${current.fontSize}px`, fontWeight: current.bold ? 700 : 400, fontStyle: current.italic ? "italic" : "normal", textDecoration: current.underline ? "underline" : "none", color: current.color };
+}
 
 function isSupportedImageMime(value: string): value is SupportedImageMime {
   return value === "image/jpeg" || value === "image/png" || value === "image/webp";
@@ -132,7 +148,7 @@ const copy = {
     displayName: "Username", yourName: "Your username", email: "Email", yourEmail: "you@example.com", password: "Password", atLeastSix: "At least 6 characters", yourPassword: "Your password",
     confirmPassword: "Confirm password", repeatPassword: "Repeat your password", pleaseWait: "Please wait…", passwordsMismatch: "Passwords do not match.", forgotPassword: "Forgot password?", resetPassword: "Reset password", resetInstructions: "Enter your account email. If it matches an account and email delivery is connected, a 6-digit reset code will arrive.", sendResetCode: "Send reset code", resetCode: "6-digit reset code", enterResetCode: "Enter code", backToSignIn: "Back to sign in", resetRequestReady: "If that email matches an account, check it for a reset code. Email delivery must be connected first.", passwordReset: "Password updated. Sign in with your new password.",
     tuningRooms: "Tuning the rooms…", couldNotLoadRooms: "Could not load the rooms.", startAgain: "Start again",
-    onTheAir: "On the air", goodToSee: "Good to see you", personalStatus: "Change personal status", signOut: "Sign out", youAre: "You’re a", credits: "Credits", creditBalance: "Credit balance", earnCredits: "Earn 1 credit for every hour online", buyCredits: "Buy credits", buyCreditsAvailable: "Buy credits available", buyCreditsControlHint: "Let members see credit packages and start checkout.", buyCreditsOn: "On", buyCreditsOff: "Off", buyCreditsUnavailable: "Credit purchases are currently unavailable.", buyWithPayPal: "Buy with PayPal", paypalSetupNeeded: "PayPal checkout needs a secure merchant connection before purchases can open.", purchaseHistory: "Purchase history", creditHistory: "Credit history", noCreditActivity: "No credit activity yet", onlineEarned: "Earned online", creditPurchase: "Credits bought", giftSent: "Gift sent", giftReceived: "Gift received", adminGrant: "Granted by Super Admin", giveCredits: "Give credits", creditPackages: "Credit packages", addPackage: "Add package", packageCredits: "Credits in package", packagePrice: "Price (USD)", purchaseLog: "Purchase log", noPurchases: "No purchases yet", searchUsers: "Search users", searchRooms: "Search rooms", previous: "Previous", next: "Next", page: "Page", privateRoom: "Private room", roomPassword: "Room password", enterRoomPassword: "Enter room password", setRoomPassword: "Set room password", removeRoomPassword: "Remove password", roomPasswordHint: "Guests must enter this password before joining.", giftCredits: "Gift credits", giftSinger: "Gift the singer", creditAmount: "Credit amount", gift: "Gift", gifted: "Credits sent", defaultDisplayName: "Display name", editDisplayName: "Change display name", yourRoomName: "Your name in this room", editRoomName: "Change my room name", renameRoom: "Rename room", newRoomName: "New room name", passwordSecurity: "Profile & security",
+    onTheAir: "On the air", goodToSee: "Good to see you", personalStatus: "Change personal status", gender: "Gender", male: "Male", female: "Female", notSet: "Not set", signOut: "Sign out", youAre: "You’re a", credits: "Credits", creditBalance: "Credit balance", earnCredits: "Earn 1 credit for every hour online", buyCredits: "Buy credits", buyCreditsAvailable: "Buy credits available", buyCreditsControlHint: "Let members see credit packages and start checkout.", buyCreditsOn: "On", buyCreditsOff: "Off", buyCreditsUnavailable: "Credit purchases are currently unavailable.", buyWithPayPal: "Buy with PayPal", paypalSetupNeeded: "PayPal checkout needs a secure merchant connection before purchases can open.", purchaseHistory: "Purchase history", creditHistory: "Credit history", noCreditActivity: "No credit activity yet", onlineEarned: "Earned online", creditPurchase: "Credits bought", giftSent: "Gift sent", giftReceived: "Gift received", adminGrant: "Granted by Super Admin", giveCredits: "Give credits", creditPackages: "Credit packages", addPackage: "Add package", packageCredits: "Credits in package", packagePrice: "Price (USD)", purchaseLog: "Purchase log", noPurchases: "No purchases yet", searchUsers: "Search users", searchRooms: "Search rooms", previous: "Previous", next: "Next", page: "Page", privateRoom: "Private room", roomPassword: "Room password", enterRoomPassword: "Enter room password", setRoomPassword: "Set room password", removeRoomPassword: "Remove password", roomPasswordHint: "Guests must enter this password before joining.", giftCredits: "Gift credits", giftSinger: "Gift the singer", creditAmount: "Credit amount", gift: "Gift", gifted: "Credits sent", defaultDisplayName: "Display name", editDisplayName: "Change display name", yourRoomName: "Your name in this room", editRoomName: "Change my room name", renameRoom: "Rename room", newRoomName: "New room name", passwordSecurity: "Profile & security",
     secureAccount: "Secure this account", changeSignInPassword: "Manage your email and sign-in password", setPasswordAnotherDevice: "Add recovery details for this account",
     currentPassword: "Current password", newPassword: "New password", confirmNewPassword: "Confirm new password", saving: "Saving…", changePassword: "Change password", setPassword: "Set password", cancel: "Cancel", areYouSure: "Are you sure?", confirm: "Confirm", newPasswordsMismatch: "New passwords do not match.",
     emailStatus: "Email", verified: "Verified", notVerified: "Not verified", noEmail: "No email added", addOrChangeEmail: "Add or change email", sendConfirmation: "Send confirmation code", confirmationCode: "Confirmation code", verifyEmail: "Verify email", emailServiceNeeded: "Email delivery is ready to connect, but no provider is connected yet.", confirmationSent: "Confirmation code sent. Check your email.", emailVerified: "Email confirmed.",
@@ -162,7 +178,7 @@ const copy = {
     displayName: "Tên đăng nhập", yourName: "Tên đăng nhập của bạn", email: "Email", yourEmail: "ban@example.com", password: "Mật khẩu", atLeastSix: "Ít nhất 6 ký tự", yourPassword: "Mật khẩu của bạn",
     confirmPassword: "Xác nhận mật khẩu", repeatPassword: "Nhập lại mật khẩu", pleaseWait: "Vui lòng chờ…", passwordsMismatch: "Mật khẩu không khớp.", forgotPassword: "Quên mật khẩu?", resetPassword: "Đặt lại mật khẩu", resetInstructions: "Nhập email của tài khoản. Nếu khớp và dịch vụ email đã được kết nối, mã đặt lại gồm 6 chữ số sẽ được gửi đến.", sendResetCode: "Gửi mã đặt lại", resetCode: "Mã đặt lại 6 chữ số", enterResetCode: "Nhập mã", backToSignIn: "Quay lại đăng nhập", resetRequestReady: "Nếu email khớp với tài khoản, hãy kiểm tra mã đặt lại. Dịch vụ email phải được kết nối trước.", passwordReset: "Mật khẩu đã được cập nhật. Hãy đăng nhập bằng mật khẩu mới.",
     tuningRooms: "Đang kết nối các phòng…", couldNotLoadRooms: "Không thể tải danh sách phòng.", startAgain: "Bắt đầu lại",
-    onTheAir: "Đang phát sóng", goodToSee: "Rất vui gặp lại", personalStatus: "thay đổi trạng thái cá nhân", signOut: "Đăng xuất", youAre: "Vai trò của bạn:", credits: "Tín dụng", creditBalance: "Số dư tín dụng", earnCredits: "Nhận 1 tín dụng cho mỗi giờ trực tuyến", buyCredits: "Mua tín dụng", buyCreditsAvailable: "Cho phép mua tín dụng", buyCreditsControlHint: "Cho phép thành viên xem gói tín dụng và bắt đầu thanh toán.", buyCreditsOn: "Bật", buyCreditsOff: "Tắt", buyCreditsUnavailable: "Hiện không thể mua tín dụng.", buyWithPayPal: "Mua bằng PayPal", paypalSetupNeeded: "Thanh toán PayPal cần kết nối tài khoản người bán an toàn trước khi có thể mua.", purchaseHistory: "Lịch sử mua", creditHistory: "Lịch sử tín dụng", noCreditActivity: "Chưa có hoạt động tín dụng", onlineEarned: "Nhận khi trực tuyến", creditPurchase: "Đã mua tín dụng", giftSent: "Quà đã gửi", giftReceived: "Quà đã nhận", adminGrant: "Được Siêu quản trị viên tặng", giveCredits: "Tặng tín dụng", creditPackages: "Gói tín dụng", addPackage: "Thêm gói", packageCredits: "Tín dụng trong gói", packagePrice: "Giá (USD)", purchaseLog: "Nhật ký mua", noPurchases: "Chưa có giao dịch mua", searchUsers: "Tìm người dùng", searchRooms: "Tìm phòng", previous: "Trước", next: "Tiếp", page: "Trang", privateRoom: "Phòng riêng tư", roomPassword: "Mật khẩu phòng", enterRoomPassword: "Nhập mật khẩu phòng", setRoomPassword: "Đặt mật khẩu phòng", removeRoomPassword: "Xóa mật khẩu", roomPasswordHint: "Khách phải nhập mật khẩu này trước khi vào.", giftCredits: "Tặng tín dụng", giftSinger: "Tặng người hát", creditAmount: "Số tín dụng", gift: "Tặng", gifted: "Đã gửi tín dụng", defaultDisplayName: "Tên hiển thị", editDisplayName: "Đổi tên hiển thị", yourRoomName: "Tên của bạn trong phòng này", editRoomName: "Đổi tên của tôi trong phòng", renameRoom: "Đổi tên phòng", newRoomName: "Tên phòng mới", passwordSecurity: "Hồ sơ & bảo mật",
+    onTheAir: "Đang phát sóng", goodToSee: "Rất vui gặp lại", personalStatus: "thay đổi trạng thái cá nhân", gender: "Giới tính", male: "Nam", female: "Nữ", notSet: "Chưa đặt", signOut: "Đăng xuất", youAre: "Vai trò của bạn:", credits: "Tín dụng", creditBalance: "Số dư tín dụng", earnCredits: "Nhận 1 tín dụng cho mỗi giờ trực tuyến", buyCredits: "Mua tín dụng", buyCreditsAvailable: "Cho phép mua tín dụng", buyCreditsControlHint: "Cho phép thành viên xem gói tín dụng và bắt đầu thanh toán.", buyCreditsOn: "Bật", buyCreditsOff: "Tắt", buyCreditsUnavailable: "Hiện không thể mua tín dụng.", buyWithPayPal: "Mua bằng PayPal", paypalSetupNeeded: "Thanh toán PayPal cần kết nối tài khoản người bán an toàn trước khi có thể mua.", purchaseHistory: "Lịch sử mua", creditHistory: "Lịch sử tín dụng", noCreditActivity: "Chưa có hoạt động tín dụng", onlineEarned: "Nhận khi trực tuyến", creditPurchase: "Đã mua tín dụng", giftSent: "Quà đã gửi", giftReceived: "Quà đã nhận", adminGrant: "Được Siêu quản trị viên tặng", giveCredits: "Tặng tín dụng", creditPackages: "Gói tín dụng", addPackage: "Thêm gói", packageCredits: "Tín dụng trong gói", packagePrice: "Giá (USD)", purchaseLog: "Nhật ký mua", noPurchases: "Chưa có giao dịch mua", searchUsers: "Tìm người dùng", searchRooms: "Tìm phòng", previous: "Trước", next: "Tiếp", page: "Trang", privateRoom: "Phòng riêng tư", roomPassword: "Mật khẩu phòng", enterRoomPassword: "Nhập mật khẩu phòng", setRoomPassword: "Đặt mật khẩu phòng", removeRoomPassword: "Xóa mật khẩu", roomPasswordHint: "Khách phải nhập mật khẩu này trước khi vào.", giftCredits: "Tặng tín dụng", giftSinger: "Tặng người hát", creditAmount: "Số tín dụng", gift: "Tặng", gifted: "Đã gửi tín dụng", defaultDisplayName: "Tên hiển thị", editDisplayName: "Đổi tên hiển thị", yourRoomName: "Tên của bạn trong phòng này", editRoomName: "Đổi tên của tôi trong phòng", renameRoom: "Đổi tên phòng", newRoomName: "Tên phòng mới", passwordSecurity: "Hồ sơ & bảo mật",
     secureAccount: "Bảo vệ tài khoản", changeSignInPassword: "Quản lý email và mật khẩu đăng nhập", setPasswordAnotherDevice: "Thêm thông tin khôi phục cho tài khoản này",
     currentPassword: "Mật khẩu hiện tại", newPassword: "Mật khẩu mới", confirmNewPassword: "Xác nhận mật khẩu mới", saving: "Đang lưu…", changePassword: "Đổi mật khẩu", setPassword: "Đặt mật khẩu", cancel: "Hủy", areYouSure: "Bạn có chắc không?", confirm: "Xác nhận", newPasswordsMismatch: "Mật khẩu mới không khớp.",
     emailStatus: "Email", verified: "Đã xác minh", notVerified: "Chưa xác minh", noEmail: "Chưa thêm email", addOrChangeEmail: "Thêm hoặc đổi email", sendConfirmation: "Gửi mã xác nhận", confirmationCode: "Mã xác nhận", verifyEmail: "Xác minh email", emailServiceNeeded: "Luồng gửi email đã sẵn sàng, nhưng chưa kết nối nhà cung cấp.", confirmationSent: "Đã gửi mã xác nhận. Hãy kiểm tra email.", emailVerified: "Đã xác nhận email.",
@@ -247,7 +263,7 @@ type RoomConfirmation =
   | { kind: "queue-remove"; userId: number; name: string }
   | { kind: "queue-clear" };
 
-function Icon({ name, size = 20 }: { name: "mic" | "send" | "plus" | "users" | "door" | "shield" | "mute" | "back" | "music" | "clock" | "queue" | "heart" | "smile" | "camera" | "image" | "edit" | "shirt" | "trash" | "menu" | "grid" | "star" | "wifi" | "record" | "collapse" | "gear"; size?: number }) {
+function Icon({ name, size = 20 }: { name: "mic" | "send" | "plus" | "users" | "door" | "shield" | "mute" | "back" | "music" | "clock" | "queue" | "heart" | "smile" | "camera" | "image" | "edit" | "shirt" | "dress" | "trash" | "menu" | "grid" | "star" | "wifi" | "record" | "collapse" | "gear" | "pause" | "gift"; size?: number }) {
   const paths: Record<string, ReactNode> = {
     mic: <><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7"/></>,
     send: <><path d="m3 11 17-8-7.5 18-2.1-7.4L3 11Z"/><path d="m10.4 13.6 4.2-4.2"/></>,
@@ -266,6 +282,7 @@ function Icon({ name, size = 20 }: { name: "mic" | "send" | "plus" | "users" | "
     image: <><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 4.5-4.5 3.5 3 2.5-2.5 5.5 5"/></>,
     edit: <><path d="M4 20h4l11-11a2.8 2.8 0 0 0-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></>, 
     shirt: <><path d="M8 4 3 7l2 5 3-1v9h8v-9l3 1 2-5-5-3c-.6 1.5-1.9 2.4-4 2.4S8.6 5.5 8 4Z" fill="currentColor"/><path d="m9 4 3 2.4L15 4"/></>,
+    dress: <path d="M9 3h6l1.2 5.2L20 20H4L7.8 8.2 9 3Zm-.7 6.5h7.4M10 3c.2 1.3.9 2 2 2s1.8-.7 2-2" fill="currentColor"/>,
     trash: <><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></>,
     menu: <><path d="M4 6h16M4 12h16M4 18h16"/></>,
     grid: <><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></>,
@@ -274,6 +291,8 @@ function Icon({ name, size = 20 }: { name: "mic" | "send" | "plus" | "users" | "
     record: <><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4" fill="currentColor"/></>,
     collapse: <><path d="M8 4H4v4M16 4h4v4M8 20H4v-4M16 20h4v-4"/><path d="m4 4 5 5M20 4l-5 5M4 20l5-5M20 20l-5-5"/></>,
     gear: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></>,
+    pause: <><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></>,
+    gift: <><rect x="3" y="9" width="18" height="12" rx="1"/><path d="M12 9v12M3 13h18M12 9H7.5a2.5 2.5 0 1 1 2.5-2.5c0 1.4 2 2.5 2 2.5Zm0 0h4.5A2.5 2.5 0 1 0 14 6.5C14 7.9 12 9 12 9Z"/></>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
@@ -482,9 +501,8 @@ function Home({ token, onOpenRoom, onSignOut, supportOpen, onSetSupportOpen }: {
   const [creating, setCreating] = useState(false);
   const [roomName, setRoomName] = useState("");
   const [securityOpen, setSecurityOpen] = useState(false);
+  const [chatTextStyleDraft, setChatTextStyleDraft] = useState<ChatTextStyle>(DEFAULT_CHAT_TEXT_STYLE);
   const [creditsOpen, setCreditsOpen] = useState(false);
-  const [privateJoin, setPrivateJoin] = useState<{ id: number; name: string } | null>(null);
-  const [privateRoomPassword, setPrivateRoomPassword] = useState("");
   const [editingDisplayName, setEditingDisplayName] = useState(false);
   const [displayNameDraft, setDisplayNameDraft] = useState("");
   const [editingPersonalStatus, setEditingPersonalStatus] = useState(false);
@@ -554,6 +572,9 @@ function Home({ token, onOpenRoom, onSignOut, supportOpen, onSetSupportOpen }: {
   useEffect(() => {
     if (!editingPersonalStatus && home.data?.user?.personalStatus !== undefined) setPersonalStatusDraft(home.data.user.personalStatus ?? "");
   }, [editingPersonalStatus, home.data?.user?.personalStatus]);
+  useEffect(() => {
+    if (home.data?.user?.chatTextStyle) setChatTextStyleDraft(home.data.user.chatTextStyle);
+  }, [home.data?.user?.chatTextStyle]);
   const creditStore = useQuery({ queryKey: ["credit-store", token], queryFn: () => api.getCreditStore({ token }), enabled: creditsOpen });
   const adminDashboard = useQuery({ queryKey: ["admin-dashboard", token], queryFn: () => api.getAdminDashboard({ token }), enabled: adminOpen && (home.data?.user?.role === "admin" || home.data?.user?.role === "superadmin"), refetchInterval: adminOpen ? 5000 : false });
   const adminCredits = useQuery({ queryKey: ["admin-credits", token], queryFn: () => api.getAdminCreditDashboard({ token }), enabled: adminOpen && adminTab === "credits" && (home.data?.user?.role === "admin" || home.data?.user?.role === "superadmin") });
@@ -566,7 +587,7 @@ function Home({ token, onOpenRoom, onSignOut, supportOpen, onSetSupportOpen }: {
       queryClient.invalidateQueries({ queryKey: ["home"] });
     },
   });
-  const join = useMutation({ mutationFn: (input: { roomId: number; password?: string }) => api.joinRoom({ token, ...input }), onSuccess: (result, input) => { if (result.ok) { setPrivateJoin(null); setPrivateRoomPassword(""); onOpenRoom(input.roomId); } } });
+  const join = useMutation({ mutationFn: (roomId: number) => api.joinRoom({ token, roomId }), onSuccess: (result, roomId) => { if (result.ok) onOpenRoom(roomId); } });
   const deleteRoom = useMutation({
     mutationFn: (roomId: number) => api.deleteRoom({ token, roomId }),
     onSuccess: (result) => {
@@ -674,6 +695,21 @@ function Home({ token, onOpenRoom, onSignOut, supportOpen, onSetSupportOpen }: {
       queryClient.invalidateQueries({ queryKey: ["home", token] });
     },
   });
+  const updateGender = useMutation({
+    mutationFn: (gender: "male" | "female" | null) => api.updateGender({ token, gender }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["home", token] });
+      queryClient.invalidateQueries({ queryKey: ["room"] });
+    },
+  });
+  const updateChatTextStyle = useMutation({
+    mutationFn: () => api.updateChatTextStyle({ token, style: chatTextStyleDraft }),
+    onSuccess: (result) => {
+      if (!result.ok) return;
+      queryClient.invalidateQueries({ queryKey: ["home", token] });
+      queryClient.invalidateQueries({ queryKey: ["room"] });
+    },
+  });
   const updateSingerCoverPhoto = useMutation({
     mutationFn: async (file: File | null) => {
       if (!file) return api.updateSingerCoverPhoto({ token, image: null });
@@ -755,8 +791,7 @@ function Home({ token, onOpenRoom, onSignOut, supportOpen, onSetSupportOpen }: {
   const enterLobbyRoom = (room: (typeof rooms)[number]) => {
     if (room.locked && user.role !== "admin" && user.role !== "superadmin") return;
     if (room.joined) onOpenRoom(room.id);
-    else if (room.isPrivate) setPrivateJoin({ id: room.id, name: room.name });
-    else join.mutate({ roomId: room.id });
+    else join.mutate(room.id);
   };
   const openExactLobbySearchMatch = () => {
     const query = lobbySearch.trim();
@@ -798,7 +833,7 @@ function Home({ token, onOpenRoom, onSignOut, supportOpen, onSetSupportOpen }: {
             <label className="sr-only" htmlFor="desktop-display-name">{t("defaultDisplayName")}</label>
             <input id="desktop-display-name" value={displayNameDraft} onChange={(event) => setDisplayNameDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") { setDisplayNameDraft(user.displayName); setEditingDisplayName(false); } }} minLength={2} maxLength={32} autoFocus disabled={updateDisplayName.isPending}/>
           </form> : <button type="button" className="desktop-display-name" title={`${t("userId")} #${user.id}`} onClick={() => { setDisplayNameDraft(user.displayName); setEditingDisplayName(true); }}><strong>{user.displayName}</strong><Icon name="edit" size={14}/></button>}
-          <p><i aria-hidden="true"/> {t("onTheAir")} · {roleLabel}</p>
+          <p><i aria-hidden="true"/> {t("onTheAir")} · {roleLabel}{user.gender ? ` · ${t(user.gender)}` : ""}</p>
           {editingPersonalStatus ? <form className="personal-status-form" onSubmit={(event) => { event.preventDefault(); updatePersonalStatus.mutate(); }}>
             <label className="sr-only" htmlFor="personal-status">{t("personalStatus")}</label>
             <input id="personal-status" value={personalStatusDraft} onChange={(event) => setPersonalStatusDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") { setPersonalStatusDraft(user.personalStatus ?? ""); setEditingPersonalStatus(false); } }} maxLength={80} placeholder={t("personalStatus")} autoFocus disabled={updatePersonalStatus.isPending}/>
@@ -827,7 +862,7 @@ function Home({ token, onOpenRoom, onSignOut, supportOpen, onSetSupportOpen }: {
       <div><p className="eyebrow">{t("onTheAir")}</p><h1>{t("goodToSee")}, {editingDisplayName ? <form className="mobile-display-name-editor" onSubmit={(event) => { event.preventDefault(); if (!displayNameDraft.trim()) { setDisplayNameDraft(user.displayName); setEditingDisplayName(false); return; } updateDisplayName.mutate(); }}><label className="sr-only" htmlFor="mobile-display-name">{t("defaultDisplayName")}</label><input id="mobile-display-name" value={displayNameDraft} onChange={(event) => setDisplayNameDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") { setDisplayNameDraft(user.displayName); setEditingDisplayName(false); } }} minLength={2} maxLength={32} autoFocus disabled={updateDisplayName.isPending}/></form> : <button type="button" className="mobile-display-name" title={`${t("userId")} #${user.id}`} onClick={() => { setDisplayNameDraft(user.displayName); setEditingDisplayName(true); }}><em>{user.displayName}</em><Icon name="edit" size={12}/></button>}</h1></div>
       <div className="header-actions"><button className="icon-button" onClick={() => setConfirmingSignOut(true)} aria-label={t("signOut")}><Icon name="door"/></button></div>
     </header>
-    <div className="role-line mobile-lobby-only"><span>{t("youAre")} {roleLabel}</span><RoleBadge role={user.role}/><span className="user-id">{t("userId")} #{user.id}</span><button type="button" className={`mobile-friends-button ${friendsOpen ? "active" : ""}`} onClick={() => { setFriendsOpen((open) => !open); setAdminOpen(false); onSetSupportOpen(false); }}><Icon name="users" size={15}/>{t("friends")}{(friends.data?.incoming.length ?? 0) > 0 && <b>{friends.data?.incoming.length}</b>}</button></div>
+    <div className="role-line mobile-lobby-only"><span>{t("youAre")} {roleLabel}</span><RoleBadge role={user.role}/>{user.gender && <span className="profile-gender">{t("gender")}: {t(user.gender)}</span>}<span className="user-id">{t("userId")} #{user.id}</span><button type="button" className={`mobile-friends-button ${friendsOpen ? "active" : ""}`} onClick={() => { setFriendsOpen((open) => !open); setAdminOpen(false); onSetSupportOpen(false); }}><Icon name="users" size={15}/>{t("friends")}{(friends.data?.incoming.length ?? 0) > 0 && <b>{friends.data?.incoming.length}</b>}</button></div>
     <section className={`credit-strip ${creditsOpen ? "is-open" : ""}`}>
       <button type="button" className="credit-toggle" onClick={() => setCreditsOpen((open) => !open)} aria-expanded={creditsOpen}>
         <span className="credit-balance"><strong>{home.data.credit?.balance ?? 0}</strong> {t("credits")}</span><small>{t("earnCredits")}</small>{buyCreditsEnabled && <b>{t("buyCredits")}</b>}
@@ -851,6 +886,31 @@ function Home({ token, onOpenRoom, onSignOut, supportOpen, onSetSupportOpen }: {
         <div><strong>{t("passwordSecurity")}</strong><small>{user.hasPassword ? t("changeSignInPassword") : t("setPasswordAnotherDevice")}</small></div>
       </button>
       {securityOpen && <div className="security-form">
+        <section className="gender-setting" aria-label={t("gender")}>
+          <label htmlFor="profile-gender"><strong>{t("gender")}</strong><small>{t("notSet")} / {t("male")} / {t("female")}</small></label>
+          <select id="profile-gender" value={user.gender ?? ""} onChange={(event) => { const gender = event.currentTarget.value; updateGender.mutate(gender === "male" || gender === "female" ? gender : null); }} disabled={updateGender.isPending}>
+            <option value="">{t("notSet")}</option><option value="male">{t("male")}</option><option value="female">{t("female")}</option>
+          </select>
+          {updateGender.data?.error && <Notice tone="error">{updateGender.data.error}</Notice>}
+        </section>
+        <form className="chat-text-style-setting" aria-label="Kiểu chữ chat cá nhân" onSubmit={(event) => { event.preventDefault(); updateChatTextStyle.mutate(); }}>
+          <div className="chat-style-heading"><div><strong>Kiểu chữ chat</strong><small>Mọi tin nhắn của bạn sẽ dùng kiểu chữ này.</small></div><span className="chat-style-preview" style={chatTextCss(chatTextStyleDraft)}>Tin nhắn mẫu</span></div>
+          <div className="chat-style-fields">
+            <label htmlFor="chat-font-family"><span>Font chữ</span><select id="chat-font-family" value={chatTextStyleDraft.fontFamily} onChange={(event) => setChatTextStyleDraft((current) => ({ ...current, fontFamily: event.currentTarget.value as ChatFontFamily }))}>
+              <option value="system">Mặc định</option><option value="serif">Có chân</option><option value="rounded">Bo tròn</option><option value="mono">Đơn cách</option><option value="handwriting">Viết tay</option>
+            </select></label>
+            <label htmlFor="chat-font-size"><span>Cỡ chữ <b>{chatTextStyleDraft.fontSize}px</b></span><input id="chat-font-size" type="range" min="12" max="24" step="1" value={chatTextStyleDraft.fontSize} onChange={(event) => setChatTextStyleDraft((current) => ({ ...current, fontSize: Number(event.currentTarget.value) }))}/></label>
+            <label htmlFor="chat-font-color"><span>Màu chữ</span><input id="chat-font-color" type="color" value={chatTextStyleDraft.color} onChange={(event) => setChatTextStyleDraft((current) => ({ ...current, color: event.currentTarget.value }))}/></label>
+          </div>
+          <div className="chat-style-toggles" aria-label="Định dạng chữ">
+            <button type="button" className={chatTextStyleDraft.bold ? "active" : ""} aria-pressed={chatTextStyleDraft.bold} onClick={() => setChatTextStyleDraft((current) => ({ ...current, bold: !current.bold }))}><strong>B</strong><span>Đậm</span></button>
+            <button type="button" className={chatTextStyleDraft.italic ? "active" : ""} aria-pressed={chatTextStyleDraft.italic} onClick={() => setChatTextStyleDraft((current) => ({ ...current, italic: !current.italic }))}><em>I</em><span>Nghiêng</span></button>
+            <button type="button" className={chatTextStyleDraft.underline ? "active" : ""} aria-pressed={chatTextStyleDraft.underline} onClick={() => setChatTextStyleDraft((current) => ({ ...current, underline: !current.underline }))}><u>U</u><span>Gạch chân</span></button>
+          </div>
+          <button className="small-button chat-style-save" disabled={updateChatTextStyle.isPending}>{updateChatTextStyle.isPending ? "Đang lưu…" : "Lưu kiểu chữ"}</button>
+          {updateChatTextStyle.data?.ok && <small className="chat-style-saved">Đã lưu kiểu chữ.</small>}
+          {updateChatTextStyle.data?.error && <Notice tone="error">{updateChatTextStyle.data.error}</Notice>}
+        </form>
         <section className="singer-cover-setting" aria-label={t("singerCoverPhoto")}>
           {user.singerCoverPhotoUrl ? <img src={user.singerCoverPhotoUrl} alt=""/> : <div className="photo-placeholder" aria-hidden="true">{user.displayName.slice(0, 1).toUpperCase()}</div>}
           <div><strong>{t("singerCoverPhoto")}</strong><small>{t("singerCoverHint")}</small><div className="photo-actions"><label className="small-button">{updateSingerCoverPhoto.isPending ? t("saving") : t("changePhoto")}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={updateSingerCoverPhoto.isPending} onChange={(event) => { const input = event.currentTarget; const file = input.files?.[0]; if (file) updateSingerCoverPhoto.mutate(file); input.value = ""; }}/></label>{user.singerCoverPhotoUrl && <button type="button" className="cancel-button" disabled={updateSingerCoverPhoto.isPending} onClick={() => updateSingerCoverPhoto.mutate(null)}>{t("removePhoto")}</button>}</div>{updateSingerCoverPhoto.data?.error && <Notice tone="error">{updateSingerCoverPhoto.data.error}</Notice>}</div>
@@ -953,7 +1013,7 @@ function Home({ token, onOpenRoom, onSignOut, supportOpen, onSetSupportOpen }: {
         {adminDashboard.data?.ok && adminTab === "users" && <div className="admin-records">
           <label className="admin-search"><span className="sr-only">{t("searchUsers")}</span><input type="search" value={adminUserSearch} onChange={(event) => { setAdminUserSearch(event.target.value); setAdminUserPage(1); }} placeholder={t("searchUsers")}/></label>
           {filteredAdminUsers.length === 0 ? <p className="admin-empty">{t("noAdminData")}</p> : visibleAdminUsers.map((person) => <article className={`admin-record ${person.deletedAt ? "deleted" : ""}`} key={person.id} title={`${t("userId")} #${person.id}`}>
-            <div className="admin-record-heading"><div className="avatar">{person.displayName.slice(0, 1).toUpperCase()}</div><div><strong>{person.displayName}</strong><small>@{person.name} · {t("userId")} #{person.id} · {person.role}</small></div><div className="admin-statuses">{person.deletedAt && <span className="danger-status">{t("deleted")}</span>}{person.accountLocked && <span>{t("accountLocked")}</span>}{person.ipBlocked && <span className="danger-status">{t("networkBlocked")}</span>}</div></div>
+            <div className="admin-record-heading"><div className="avatar">{person.displayName.slice(0, 1).toUpperCase()}</div><div><strong>{person.displayName}</strong><small>@{person.name} · {t("userId")} #{person.id} · {person.role}{person.gender ? ` · ${t(person.gender)}` : ""}</small></div><div className="admin-statuses">{person.deletedAt && <span className="danger-status">{t("deleted")}</span>}{person.accountLocked && <span>{t("accountLocked")}</span>}{person.ipBlocked && <span className="danger-status">{t("networkBlocked")}</span>}</div></div>
             <dl className="admin-details"><div><dt>{t("email")}</dt><dd>{person.email ?? "—"}</dd></div><div><dt>{t("ipAddress")}</dt><dd className="ip-value">{person.lastIpAddress ?? t("ipUnknown")}</dd></div><div><dt>{t("lastSeen")}</dt><dd>{person.ipLastSeenAt ? formatDateTime(person.ipLastSeenAt, locale) : "—"}</dd></div></dl>
             {user.role === "superadmin" && person.id !== user.id && !person.deletedAt && <form className="admin-credit-grant" onSubmit={(event) => { event.preventDefault(); const amount = Number(creditGrantAmounts[person.id] ?? ""); if (Number.isInteger(amount) && amount > 0) grantCredits.mutate({ targetUserId: person.id, amount }); }}>
               <label htmlFor={`credit-grant-${person.id}`}>{t("giveCredits")}</label><input id={`credit-grant-${person.id}`} type="number" min="1" max="1000000" inputMode="numeric" value={creditGrantAmounts[person.id] ?? ""} onChange={(event) => setCreditGrantAmounts((current) => ({ ...current, [person.id]: event.target.value }))} placeholder={t("creditAmount")} required/><button type="submit" className="small-button" disabled={grantCredits.isPending}>{t("giveCredits")}</button>
@@ -1031,10 +1091,6 @@ function Home({ token, onOpenRoom, onSignOut, supportOpen, onSetSupportOpen }: {
       </div>}
     </section>}
     {reportTarget && <ReportDialog key={`${reportTarget.type}-${reportTarget.id}`} token={token} target={reportTarget} onClose={() => setReportTarget(null)}/>} 
-    {privateJoin && <div className="dialog-backdrop" role="presentation"><form className="confirmation-dialog private-room-dialog" role="dialog" aria-modal="true" onSubmit={(event) => { event.preventDefault(); join.mutate({ roomId: privateJoin.id, password: privateRoomPassword }); }}>
-      <h2>{privateJoin.name}</h2><p>{t("enterRoomPassword")}</p><label htmlFor="private-room-password">{t("roomPassword")}</label><input id="private-room-password" type="password" minLength={4} maxLength={72} value={privateRoomPassword} onChange={(event) => setPrivateRoomPassword(event.target.value)} autoFocus required/>
-      {join.data?.error && <Notice tone="error">{join.data.error}</Notice>}<div className="confirmation-actions"><button type="button" className="cancel-button" onClick={() => { setPrivateJoin(null); setPrivateRoomPassword(""); join.reset(); }}>{t("cancel")}</button><button className="confirm-button" disabled={join.isPending}>{t("open")}</button></div>
-    </form></div>}
     {pendingAdminAction && <ConfirmationDialog message={`${pendingAdminAction.label}. ${t("adminConfirmAction")}`} confirmLabel={t("confirm")} onCancel={() => setPendingAdminAction(null)} onConfirm={() => {
       if (pendingAdminAction.kind === "user") manageUserAccess.mutate({ targetUserId: pendingAdminAction.userId, action: pendingAdminAction.action });
       else if (pendingAdminAction.kind === "owner") transferRoomOwnership.mutate({ roomId: pendingAdminAction.roomId, targetUserId: pendingAdminAction.targetUserId });
@@ -1103,7 +1159,7 @@ function microphoneErrorMessage(error: unknown, locale: Locale) {
   return "Could not start the microphone. Check the device permission and try again.";
 }
 
-function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: string; roomId: number; onBack: () => void; supportOpen: boolean; onToggleSupport: () => void }) {
+function Room({ token, roomId, onBack, onNavigateRoom, supportOpen, onToggleSupport }: { token: string; roomId: number; onBack: () => void; onNavigateRoom: (id: number) => void; supportOpen: boolean; onToggleSupport: () => void }) {
   const { locale, t } = useLocale();
   const queryClient = useQueryClient();
   const [body, setBody] = useState("");
@@ -1142,10 +1198,17 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
   const [remoteStreams, setRemoteStreams] = useState<Map<number, MediaStream>>(new Map());
   const [participantSearch, setParticipantSearch] = useState("");
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
+  const [queueStageCollapsed, setQueueStageCollapsed] = useState(false);
   const [roomFavorite, setRoomFavorite] = useState(false);
   const [recordingOn, setRecordingOn] = useState(false);
+  const [creatingSubroom, setCreatingSubroom] = useState(false);
+  const [subroomName, setSubroomName] = useState("");
+  const [subroomPassword, setSubroomPassword] = useState("");
+  const [privateSubroom, setPrivateSubroom] = useState<{ id: number; name: string } | null>(null);
+  const [privateSubroomPassword, setPrivateSubroomPassword] = useState("");
+  const [queueMenuUserId, setQueueMenuUserId] = useState<number | null>(null);
   const roomPictureRef = useRef<HTMLDivElement | null>(null);
-  const participantsPanelRef = useRef<HTMLDetailsElement | null>(null);
+  const participantsPanelRef = useRef<HTMLElement | null>(null);
   const micQueuePanelRef = useRef<HTMLElement | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const recordingChunks = useRef<Blob[]>([]);
@@ -1160,6 +1223,28 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
 
   const snapshot = useQuery({ queryKey: ["room", roomId, token], queryFn: () => api.roomSnapshot({ token, roomId }), refetchInterval: 2000 });
   const send = useMutation({ mutationFn: (text: string) => api.sendMessage({ token, roomId, body: text }), onSuccess: (result) => { if (result.ok) { setBody(""); setEmojiOpen(false); queryClient.invalidateQueries({ queryKey: ["room", roomId] }); } } });
+  const createSubroom = useMutation({
+    mutationFn: () => api.createSubroom({ token, parentRoomId: roomId, name: subroomName, password: subroomPassword || undefined }),
+    onSuccess: (result) => {
+      if (result.ok && result.roomId) {
+        setCreatingSubroom(false);
+        setSubroomName("");
+        setSubroomPassword("");
+        onNavigateRoom(result.roomId);
+      }
+      queryClient.invalidateQueries({ queryKey: ["room", roomId] });
+    },
+  });
+  const joinSubroom = useMutation({
+    mutationFn: (input: { roomId: number; password?: string }) => api.joinRoom({ token, ...input }),
+    onSuccess: (result, input) => {
+      if (result.ok) {
+        setPrivateSubroom(null);
+        setPrivateSubroomPassword("");
+        onNavigateRoom(input.roomId);
+      }
+    },
+  });
   const sendPhoto = useMutation({
     mutationFn: async (file: File) => {
       setPhotoError("");
@@ -1205,6 +1290,19 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
       queryClient.invalidateQueries({ queryKey: ["room", roomId] });
     },
   });
+  const setQueuePaused = useMutation({
+    mutationFn: (paused: boolean) => api.setQueuePaused({ token, roomId, paused }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["room", roomId] }),
+  });
+  const setMicHold = useMutation({
+    mutationFn: (active: boolean) => api.setMicHold({ token, roomId, active }),
+    onSuccess: async (result, active) => {
+      if (!result.ok) return;
+      queryClient.invalidateQueries({ queryKey: ["room", roomId] });
+      if (active && !voiceOn) await startVoice();
+      if (!active && voiceOn) await stopVoice();
+    },
+  });
   const setDefaultTime = useMutation({
     mutationFn: (durationMinutes: number) => api.setDefaultMicTime({ token, roomId, durationMinutes }),
     onSuccess: (result) => {
@@ -1215,6 +1313,10 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
   const addMicTime = useMutation({
     mutationFn: (minutes: number) => api.addMicTime({ token, roomId, minutes }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["room", roomId] }),
+  });
+  const addQueueTurnTime = useMutation({
+    mutationFn: (targetUserId: number) => api.addQueueTurnTime({ token, roomId, targetUserId }),
+    onSuccess: () => { setQueueMenuUserId(null); queryClient.invalidateQueries({ queryKey: ["room", roomId] }); },
   });
   const moderate = useMutation({ mutationFn: (input: { targetUserId: number; action: "mute" | "unmute" | "kick" }) => api.moderateUser({ token, roomId, ...input }), onSuccess: () => { setParticipantMenuId(null); queryClient.invalidateQueries({ queryKey: ["room", roomId] }); } });
   const manageBan = useMutation({
@@ -1293,7 +1395,7 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
       queryClient.invalidateQueries({ queryKey: ["room", roomId] });
     },
   });
-  const leave = useMutation({ mutationFn: () => api.leaveRoom({ token, roomId }), onSuccess: (result) => { if (result.ok) onBack(); } });
+  const leave = useMutation({ mutationFn: () => api.leaveRoom({ token, roomId }), onSuccess: (result) => { if (result.ok) { const parentRoomId = snapshot.data?.room?.parentRoomId; if (parentRoomId) onNavigateRoom(parentRoomId); else onBack(); } } });
   const closePeer = (id: number) => {
     peers.current.get(id)?.close();
     peers.current.delete(id);
@@ -1541,11 +1643,13 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
     const mayHotMic = currentMe.role === "admin" || currentMe.role === "superadmin" || currentMe.isOwner || currentMe.roomTier === "blackshirt" || currentMe.moderatorLevel >= 1;
     if (snapshot.data.room?.micMode === "free") {
       if (cameraOn) stopCamera();
+    } else if (currentSinger?.userId === currentMe.id && snapshot.data.room?.micHoldByUserId && snapshot.data.room.micHoldByUserId !== currentMe.id) {
+      if (voiceOn) { setVoiceError("Quản trị viên đang giữ micro. Đồng hồ lượt hát vẫn tiếp tục."); void stopVoice(); }
     } else if (currentSinger?.userId !== currentMe.id) {
       if (voiceOn && !mayHotMic) { setVoiceError(t("turnEnded")); void stopVoice(); }
       if (cameraOn) stopCamera();
     }
-  }, [voiceOn, cameraOn, snapshot.data?.queue, snapshot.data?.me, snapshot.data?.room?.micMode]);
+  }, [voiceOn, cameraOn, snapshot.data?.queue, snapshot.data?.me, snapshot.data?.room?.micMode, snapshot.data?.room?.micHoldByUserId]);
   useEffect(() => () => { localStream.current?.getTracks().forEach((track) => track.stop()); peers.current.forEach((peer) => peer.close()); void api.setVoicePresence({ token, roomId, active: false }); }, [roomId, token]);
   useEffect(() => {
     if (snapshot.data && (!snapshot.data.ok || !snapshot.data.me)) {
@@ -1651,6 +1755,7 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
   if (snapshot.isPending) return <main className="center-state"><div className="pulse-dot"/><p>{t("enteringRoom")}</p></main>;
   if (snapshot.error || !snapshot.data?.ok || !snapshot.data.room || !snapshot.data.me) return <main className="center-state"><Notice tone="error">{snapshot.data?.error ?? t("couldNotOpenRoom")}</Notice><button className="primary-button" onClick={onBack}>{t("backToRooms")}</button></main>;
   const { room, me, participants, messages, heart } = snapshot.data;
+  const subrooms = snapshot.data.subrooms ?? [];
   const selectedWallpaper = room.chatBackgroundPreset ? CHAT_WALLPAPERS.find((wallpaper) => wallpaper.id === room.chatBackgroundPreset) : undefined;
   const chatBackgroundImageUrl = selectedWallpaper?.src ?? room.chatBackgroundImageUrl;
   const rankedParticipants = [...participants].sort((a, b) => PEOPLE_TIER_ORDER.indexOf(a.roomTier) - PEOPLE_TIER_ORDER.indexOf(b.roomTier));
@@ -1662,6 +1767,7 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
   const canChangeMicMode = effectiveModeratorLevel >= 1;
   const canManageQueue = effectiveModeratorLevel >= 2;
   const canManageRoomSettings = effectiveModeratorLevel >= 3;
+  const canCreateSubroom = !room.parentRoomId && effectiveModeratorLevel >= 3;
   const canSendPhoto = effectiveModeratorLevel >= 3;
   const canChangeTiers = hasAdminPowers || me.roomTier === "mod3";
   const manageable = (person: Participant) => person.id !== me.id && !person.isOwner && person.role !== "admin" && person.role !== "superadmin" && (hasAdminPowers || person.moderatorLevel === 0);
@@ -1729,7 +1835,7 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
     </button>
     <span>{isMyTurn ? t("yourHeartCount") : t("giveHeart")}</span>
   </div> : null;
-  return <main className={`room-shell ${room.level === 1 ? "level-one-room" : ""} ${desktopSidebarCollapsed ? "desktop-sidebar-collapsed" : ""}`}>
+  return <main className={`room-shell ${room.level === 1 ? "level-one-room" : ""} ${room.micMode === "free" ? "room-free-mode" : ""} ${desktopSidebarCollapsed ? "desktop-sidebar-collapsed" : ""} ${queueStageCollapsed ? "queue-stage-collapsed" : ""}`}>
     <header className="room-header">
       <button className="icon-button room-back-button" onClick={() => setPendingConfirmation({ kind: "leave" })} disabled={leave.isPending} aria-label={t("backToRooms")}><Icon name="back"/></button>
       <div className={`room-picture ${room.profileImageUrl ? "has-image" : "empty"}`}>
@@ -1747,16 +1853,36 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
           <button type="button" className="cancel-button" onClick={() => setEditingRoomTitle(false)}>{t("cancel")}</button>
         </form>}
         <p className="room-desktop-meta">ID:{room.id} &nbsp; Online:{participants.length}</p>
+        {room.parentRoomId && <button type="button" className="parent-room-link" onClick={() => onNavigateRoom(room.parentRoomId ?? room.id)}><Icon name="back" size={13}/>Phòng lớn: {room.parentRoomName ?? "Quay lại"}</button>}
         {updateRoomTitle.data?.error && <Notice tone="error">{updateRoomTitle.data.error}</Notice>}
         {updateRoomProfileImage.data?.error && <Notice tone="error">{updateRoomProfileImage.data.error}</Notice>}
         {me.role !== "admin" && me.role !== "superadmin" && <button type="button" className="room-report-header" onClick={() => setReportTarget({ type: "room", id: room.id, name: room.name })}>{t("reportRoom")}</button>}
-        {me.isOwner && <button type="button" className="room-password-toggle" onClick={() => setRoomPasswordOpen((open) => !open)} aria-expanded={roomPasswordOpen}><Icon name="shield" size={13}/>{room.isPrivate ? t("privateRoom") : t("setRoomPassword")}</button>}
-        {me.isOwner && roomPasswordOpen && <form className="room-password-form" onSubmit={(event) => { event.preventDefault(); updateRoomPassword.mutate(roomPasswordDraft); }}><label htmlFor="room-password-setting">{t("roomPassword")}</label><small>{t("roomPasswordHint")}</small><input id="room-password-setting" type="password" minLength={4} maxLength={72} value={roomPasswordDraft} onChange={(event) => setRoomPasswordDraft(event.target.value)} required/><div><button className="small-button" disabled={updateRoomPassword.isPending}>{t("setRoomPassword")}</button>{room.isPrivate && <button type="button" className="cancel-button" onClick={() => updateRoomPassword.mutate("")} disabled={updateRoomPassword.isPending}>{t("removeRoomPassword")}</button>}</div>{updateRoomPassword.data?.error && <Notice tone="error">{updateRoomPassword.data.error}</Notice>}</form>}
+        {Boolean(room.parentRoomId) && me.isOwner && <button type="button" className="room-password-toggle" onClick={() => setRoomPasswordOpen((open) => !open)} aria-expanded={roomPasswordOpen}><Icon name="shield" size={13}/>{room.isPrivate ? t("privateRoom") : t("setRoomPassword")}</button>}
+        {Boolean(room.parentRoomId) && me.isOwner && roomPasswordOpen && <form className="room-password-form" onSubmit={(event) => { event.preventDefault(); updateRoomPassword.mutate(roomPasswordDraft); }}><label htmlFor="room-password-setting">{t("roomPassword")}</label><small>{t("roomPasswordHint")}</small><input id="room-password-setting" type="password" minLength={4} maxLength={72} value={roomPasswordDraft} onChange={(event) => setRoomPasswordDraft(event.target.value)} required/><div><button className="small-button" disabled={updateRoomPassword.isPending}>{t("setRoomPassword")}</button>{room.isPrivate && <button type="button" className="cancel-button" onClick={() => updateRoomPassword.mutate("")} disabled={updateRoomPassword.isPending}>{t("removeRoomPassword")}</button>}</div>{updateRoomPassword.data?.error && <Notice tone="error">{updateRoomPassword.data.error}</Notice>}</form>}
         {canManageRoomSettings && roomPictureMenuOpen && <section className="room-settings-panel" role="dialog" aria-label={t("roomSettings")}>
           <header><strong>{t("roomSettings")}</strong><button type="button" aria-label={t("cancel")} onClick={() => setRoomPictureMenuOpen(false)}>×</button></header>
           <form onSubmit={(event) => { event.preventDefault(); updateRoomTitle.mutate(); }}><label htmlFor="settings-room-title">{t("renameRoom")}</label><div className="room-settings-row"><input id="settings-room-title" value={roomTitleDraft} onChange={(event) => setRoomTitleDraft(event.target.value)} minLength={2} maxLength={42} required/><button className="small-button" disabled={updateRoomTitle.isPending}>{t("save")}</button></div></form>
           <form onSubmit={(event) => { event.preventDefault(); const minutes = Number(defaultMinutes); if (Number.isInteger(minutes) && minutes >= 1 && minutes <= 60) setDefaultTime.mutate(minutes); }}><label htmlFor="settings-default-mic-minutes">{t("defaultTurnLength")}</label><div className="room-settings-row"><input id="settings-default-mic-minutes" type="number" min="1" max="60" inputMode="numeric" value={defaultMinutes} onChange={(event) => setDefaultMinutes(event.target.value)}/><span>{t("minutes")}</span><button className="small-button" disabled={setDefaultTime.isPending}>{t("save")}</button></div></form>
           <div className="room-settings-photo"><span>{t("roomPicture")}</span><label className="small-button"><Icon name="image" size={15}/>{t("changeRoomPicture")}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={updateRoomProfileImage.isPending} onChange={(event) => { const input = event.currentTarget; const file = input.files?.[0]; if (file) updateRoomProfileImage.mutate(file); input.value = ""; }}/></label>{room.profileImageUrl && <button type="button" className="cancel-button" onClick={() => updateRoomProfileImage.mutate(null)} disabled={updateRoomProfileImage.isPending}>{t("removeRoomPicture")}</button>}</div>
+          <details className="chat-background-settings room-settings-background">
+            <summary><Icon name="edit" size={14}/>{t("chatBackground")}</summary>
+            <div className="chat-background-controls">
+              <label><span>{t("chooseChatBackground")}</span><input type="color" value={room.chatBackground === "transparent" ? "#ffffff" : room.chatBackground} onChange={(event) => updateRoomChatBackground.mutate(event.currentTarget.value)} disabled={updateRoomChatBackground.isPending || updateRoomChatBackgroundImage.isPending} aria-label={t("chooseChatBackground")}/></label>
+              <button type="button" aria-pressed={!chatBackgroundImageUrl && room.chatBackground === "#ffffff"} onClick={() => updateRoomChatBackground.mutate("#ffffff")} disabled={updateRoomChatBackground.isPending || updateRoomChatBackgroundImage.isPending}>{t("whiteBackground")}</button>
+              <button type="button" aria-pressed={!chatBackgroundImageUrl && room.chatBackground === "transparent"} onClick={() => updateRoomChatBackground.mutate("transparent")} disabled={updateRoomChatBackground.isPending || updateRoomChatBackgroundImage.isPending}>{t("transparentBackground")}</button>
+              <fieldset className="wallpaper-presets" disabled={updateRoomChatBackground.isPending || updateRoomChatBackgroundImage.isPending}>
+                <legend>{updateRoomChatBackgroundImage.isPending ? t("applyingWallpaper") : t("standardWallpapers")}</legend>
+                <div>{CHAT_WALLPAPERS.map((wallpaper) => <button key={wallpaper.id} type="button" onClick={() => updateRoomChatBackgroundImage.mutate(wallpaper)} aria-pressed={room.chatBackgroundPreset === wallpaper.id} aria-label={t(wallpaper.nameKey)} title={t(wallpaper.nameKey)}><img src={wallpaper.src} alt=""/><span>{t(wallpaper.nameKey)}</span></button>)}</div>
+              </fieldset>
+              <label className={`background-photo-upload ${updateRoomChatBackgroundImage.isPending ? "pending" : ""}`} aria-label={chatBackgroundImageUrl ? t("changeBackgroundPhoto") : t("chooseBackgroundPhoto")}>
+                <Icon name="image" size={16}/><span>{chatBackgroundImageUrl ? t("changeBackgroundPhoto") : t("chooseBackgroundPhoto")}</span>
+                <input type="file" accept="image/jpeg,image/png,image/webp" disabled={updateRoomChatBackgroundImage.isPending || updateRoomChatBackground.isPending} onChange={(event) => { const input = event.currentTarget; const file = input.files?.[0]; if (file) updateRoomChatBackgroundImage.mutate(file); input.value = ""; }}/>
+              </label>
+              {chatBackgroundImageUrl && <label className="background-fade-control"><span>{t("backgroundFade")} <output htmlFor="background-fade-slider" aria-live="polite">{backgroundFadeDraft}%</output></span><input id="background-fade-slider" type="range" min="0" max="100" step="5" value={backgroundFadeDraft} aria-label={t("backgroundFade")} aria-valuetext={`${backgroundFadeDraft}%`} disabled={updateRoomChatBackgroundFade.isPending} onChange={(event) => setBackgroundFadeDraft(Number(event.currentTarget.value))} onPointerUp={(event) => updateRoomChatBackgroundFade.mutate(Number(event.currentTarget.value))} onKeyUp={(event) => updateRoomChatBackgroundFade.mutate(Number(event.currentTarget.value))}/></label>}
+              {chatBackgroundImageUrl && <button type="button" onClick={() => updateRoomChatBackgroundImage.mutate(null)} disabled={updateRoomChatBackgroundImage.isPending}>{t("removeBackgroundPhoto")}</button>}
+            </div>
+          </details>
+          {(updateRoomChatBackground.data?.error || updateRoomChatBackgroundImage.data?.error || updateRoomChatBackgroundFade.data?.error) && <Notice tone="error">{updateRoomChatBackground.data?.error || updateRoomChatBackgroundImage.data?.error || updateRoomChatBackgroundFade.data?.error}</Notice>}
           {snapshot.data.bans && <details className="room-settings-bans"><summary><span><Icon name="shield" size={15}/>{t("roomBanList")}</span><strong>{snapshot.data.bans.length}</strong></summary><div>{snapshot.data.bans.length === 0 ? <p>{t("noBannedUsers")}</p> : snapshot.data.bans.map((ban) => <article key={ban.userId}><div><strong>{ban.name}</strong>{ban.bannedByName && <small>{t("bannedBy")} {ban.bannedByName}</small>}</div><button type="button" disabled={manageBan.isPending} onClick={() => manageBan.mutate({ targetUserId: ban.userId, action: "unban" })}>{t("unban")}</button></article>)}</div></details>}
           {(updateRoomTitle.data?.error || setDefaultTime.data?.error || updateRoomProfileImage.data?.error || manageBan.data?.error) && <Notice tone="error">{updateRoomTitle.data?.error || setDefaultTime.data?.error || updateRoomProfileImage.data?.error || manageBan.data?.error}</Notice>}
         </section>}
@@ -1773,16 +1899,20 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
       </div>
     </header>
     <div className={`queue-stage-layout ${room.micMode === "queue" ? "queue-layout-active" : "free-layout-active"}`}>
-    {(singerHasVisual || (room.level === 1 && room.micMode === "queue")) && <section className={`voice-stage ${voiceOn ? "on" : ""} ${singerHasVisual ? "camera-active" : "queue-singer-stage"} ${singerVisualPortrait ? "portrait-visual" : ""}`}>
+    {(singerHasVisual || (room.level === 1 && room.micMode === "queue")) && <section className={`voice-stage ${voiceOn ? "on" : ""} ${singerHasVisual ? "camera-active" : "queue-singer-stage"} ${singerVisualPortrait ? "portrait-visual" : ""} ${currentSingerParticipant?.gender === "female" ? "singer-female" : currentSingerParticipant?.gender === "male" ? "singer-male" : "singer-gender-unset"}`}>
       {room.level === 1 && room.micMode === "queue" && !singerHasVisual && <div className="desktop-queue-singer" aria-label={currentSinger ? `${t("singerTurn")}: ${currentSinger.name}` : t("noWaiting")}>
         <div className="desktop-singer-heading"><strong>{currentSinger?.name ?? t("noWaiting")}</strong><small>{currentSinger ? `${t("userId")} #${currentSinger.userId}` : t("joinQueueTakeMic")}</small></div>
         <span className="desktop-singer-silhouette" aria-hidden="true"><i/><b/></span>
+        {currentSinger?.endsAt && <div className="desktop-stage-timer"><span><Icon name="clock" size={15}/>{secondsLeft}s</span>{canModerate && <button type="button" className={room.micHoldByUserId ? "active" : ""} onClick={() => setMicHold.mutate(room.micHoldByUserId !== me.id)} disabled={setMicHold.isPending || Boolean(room.micHoldByUserId && room.micHoldByUserId !== me.id)} aria-label={room.micHoldByUserId === me.id ? "Tiếp tục micro" : "Tạm dừng micro"}><Icon name="pause" size={14}/></button>}</div>}
+        {currentSinger && currentSinger.userId !== me.id && <button type="button" className="desktop-stage-gift" onClick={() => document.getElementById("gift-credit-amount")?.focus()} aria-label={t("giftSinger")}><Icon name="gift" size={19}/></button>}
       </div>}
       {singerVideoStream && singerHasVideo && <div className="singer-video"><StreamVideo stream={singerVideoStream} label={`${t("singerCamera")}: ${currentSinger?.name ?? me.name}`} mirrored={isMyTurn} onOrientationChange={setSingerVisualPortrait}/></div>}
       {!singerHasVideo && singerCoverPhotoUrl && currentSinger && <div className="singer-cover-photo"><img src={singerCoverPhotoUrl} alt={`${t("singerCoverPhoto")}: ${currentSinger.name}`} onLoad={(event) => setSingerVisualPortrait(event.currentTarget.naturalHeight > event.currentTarget.naturalWidth)}/></div>}
       {singerHasVisual && currentSinger ? <div className="camera-stage-overlay" aria-label={`${t("singerTurn")}: ${currentSinger.name}`}>
-        <p className="camera-turn-label"><strong>{t("singerTurn")}</strong><span>{currentSinger.name}</span></p>
-        {currentSinger.endsAt && <time className="stage-countdown" aria-label={locale === "vi" ? `Còn ${countdown}` : `${countdown} remaining`}><Icon name="clock" size={16}/>{countdown}</time>}
+        <div className="desktop-singer-heading"><strong>{currentSinger.name}</strong><small>{t("userId")} #{currentSinger.userId}</small></div>
+        {currentSinger.endsAt && <time className="stage-countdown" aria-label={locale === "vi" ? `Còn ${countdown}` : `${countdown} remaining`}><Icon name="clock" size={16}/><span className="desktop-seconds">{secondsLeft}s</span><span className="standard-countdown">{countdown}</span></time>}
+        {room.level === 1 && currentSinger.endsAt && canModerate && <button type="button" className={`desktop-stage-pause ${room.micHoldByUserId ? "active" : ""}`} onClick={() => setMicHold.mutate(room.micHoldByUserId !== me.id)} disabled={setMicHold.isPending || Boolean(room.micHoldByUserId && room.micHoldByUserId !== me.id)} aria-label={room.micHoldByUserId === me.id ? "Tiếp tục micro" : "Tạm dừng micro"}><Icon name="pause" size={14}/></button>}
+        {room.level === 1 && currentSinger.userId !== me.id && <button type="button" className="desktop-stage-gift" onClick={() => document.getElementById("gift-credit-amount")?.focus()} aria-label={t("giftSinger")}><Icon name="gift" size={19}/></button>}
         <div className="stage-wave" aria-hidden="true"><i/><i/><i/><i/><i/><i/><i/></div>
         {heartControl}
       </div> : <>
@@ -1797,11 +1927,9 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
         <div><input id="gift-credit-amount" type="number" min="1" max="1000" inputMode="numeric" value={giftAmount} onChange={(event) => setGiftAmount(event.target.value)}/><button type="submit" disabled={giftCredits.isPending || me.creditBalance < Number(giftAmount)}>{t("gift")}</button></div>
         {(giftCredits.data?.error || giftNotice) && <small>{giftCredits.data?.error || giftNotice}</small>}
       </form>}
-      {(isMyTurn || room.micMode === "free") && <div className="singer-stage-controls">
-        {isMyTurn && (room.level >= 2 ? <button type="button" className={`camera-toggle ${cameraOn ? "active" : ""}`} onClick={() => cameraOn ? stopCamera() : void startCamera()} disabled={cameraStarting}><Icon name="camera" size={17}/>{cameraStarting ? t("starting") : cameraOn ? t("stopCamera") : t("startCamera")}</button> : <p className="camera-level-note">{t("levelTwoCamera")}</p>)}
-        <button type="button" className={`camera-toggle background-sound-toggle ${backgroundSoundOn ? "active" : ""}`} onClick={() => void toggleBackgroundSound()} disabled={backgroundSoundStarting || voiceStarting || me.muted} aria-pressed={backgroundSoundOn} title={t("backgroundSoundHint")}><Icon name="music" size={17}/>{backgroundSoundStarting ? t("backgroundSoundStarting") : backgroundSoundOn ? t("stopBackgroundSound") : t("shareBackgroundSound")}</button>
+      {isMyTurn && room.level >= 2 && <div className="singer-stage-controls">
+        <button type="button" className={`camera-toggle ${cameraOn ? "active" : ""}`} onClick={() => cameraOn ? stopCamera() : void startCamera()} disabled={cameraStarting}><Icon name="camera" size={17}/>{cameraStarting ? t("starting") : cameraOn ? t("stopCamera") : t("startCamera")}</button>
       </div>}
-      {room.micMode === "queue" && canModerate && !isMyTurn && <button type="button" className={`turn-mic-button hot-mic-button ${voiceOn ? "active" : ""}`} onClick={() => voiceOn ? void stopVoice() : void startVoice()} disabled={voiceStarting || presence.isPending || me.muted} aria-label={voiceOn ? t("leaveHotMic") : t("hotMic")} aria-busy={voiceStarting}><Icon name={me.muted ? "mute" : "mic"} size={18}/><span>{me.muted ? t("muted") : voiceStarting ? t("starting") : voiceOn ? t("leaveHotMic") : t("hotMic")}</span></button>}
       {voiceOn && <button className={`self-mute ${myMicMuted ? "active" : ""}`} onClick={() => { const next = !myMicMuted; setMyMicMuted(next); localStream.current?.getAudioTracks().forEach((track) => { track.enabled = !next; }); }}><Icon name={myMicMuted ? "mute" : "mic"} size={16}/>{myMicMuted ? t("unmuteMyMic") : t("muteMyMic")}</button>}
       {playbackBlocked && <button className="self-mute active" onClick={() => void resumeRemoteAudio()} aria-label={t("startHearing")}><Icon name="mic" size={16}/>{t("tapHear")}</button>}
       {voiceError && <Notice tone="error">{voiceError}</Notice>}
@@ -1812,13 +1940,15 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
     <div className="remote-audio" ref={remoteAudioRoot}>{Array.from(remoteStreams.entries()).map(([id, stream]) => <RemoteAudio key={id} stream={stream} name={participants.find((p) => p.id === id)?.name ?? t("participant")} onPlaybackBlocked={markPlaybackBlocked} onPlaybackStarted={markPlaybackStarted}/>)}</div>
     <section ref={micQueuePanelRef} className="mic-queue-panel" aria-labelledby="mic-queue-heading">
       <div className="queue-heading">
-        <div className="queue-title"><span><Icon name="queue" size={18}/></span><div><h2 id="mic-queue-heading">{t("micMode")}</h2>{canChangeMicMode ? <label className="mic-mode-select"><span className="sr-only">{t("changeMicMode")}</span><select value={room.micMode} onChange={(event) => setMicMode.mutate(event.target.value === "free" ? "free" : "queue")} disabled={setMicMode.isPending} aria-label={t("changeMicMode")}><option value="free">{t("freeMode")}</option><option value="queue">{t("queueMode")}</option></select></label> : <p>{room.micMode === "free" ? t("freeMode") : t("queueMode")}</p>}</div></div>
-        {room.micMode === "queue" && <div className="level-one-queue-controls" aria-label={locale === "vi" ? "Điều khiển xếp hàng" : "Queue controls"}>
-          <button type="button" onClick={() => { if (!myQueueEntry) joinQueue.mutate(); }} disabled={Boolean(myQueueEntry) || joinQueue.isPending || me.muted}><Icon name="queue" size={15}/><span>{myQueueEntry ? t("waiting") : locale === "vi" ? "Xếp hàng" : "Join queue"}</span></button>
-          {canModerate && <button type="button" className="danger" disabled={manageQueue.isPending || queue.length === 0} onClick={() => setPendingConfirmation({ kind: "queue-clear" })}><Icon name="mute" size={15}/><span>{locale === "vi" ? "Cấm xếp hàng" : "Clear queue"}</span></button>}
-          {canModerate && <button type="button" className={voiceOn && !isMyTurn ? "active" : ""} onClick={() => voiceOn ? void stopVoice() : void startVoice()} disabled={voiceStarting || presence.isPending || me.muted || isMyTurn} aria-pressed={voiceOn && !isMyTurn}><Icon name="mic" size={15}/><span>{locale === "vi" ? "Giữ micro" : "Hold mic"}</span></button>}
-          <button type="button" onClick={() => setDesktopSidebarCollapsed((collapsed) => !collapsed)} aria-pressed={desktopSidebarCollapsed}><Icon name="collapse" size={15}/><span>{desktopSidebarCollapsed ? (locale === "vi" ? "Mở rộng" : "Expand") : (locale === "vi" ? "Thu lại" : "Collapse")}</span></button>
-        </div>}
+        <div className="queue-control-cluster">
+          <div className="queue-title"><span><Icon name="queue" size={18}/></span><div><h2 id="mic-queue-heading">{t("micMode")}</h2>{canChangeMicMode ? <label className="mic-mode-select"><span className="sr-only">{t("changeMicMode")}</span><select value={room.micMode} onChange={(event) => setMicMode.mutate(event.target.value === "free" ? "free" : "queue")} disabled={setMicMode.isPending} aria-label={t("changeMicMode")}><option value="free">{t("freeMode")}</option><option value="queue">{t("queueMode")}</option></select></label> : <p>{room.micMode === "free" ? t("freeMode") : t("queueMode")}</p>}</div></div>
+          {room.micMode === "queue" && <div className="level-one-queue-controls" aria-label={locale === "vi" ? "Điều khiển xếp hàng" : "Queue controls"}>
+            <button type="button" className={myQueueEntry ? "active" : ""} onClick={() => myQueueEntry ? leaveQueue.mutate() : joinQueue.mutate()} disabled={joinQueue.isPending || leaveQueue.isPending || (!myQueueEntry && (me.muted || room.queuePaused))} aria-pressed={Boolean(myQueueEntry)}><Icon name="queue" size={15}/><span>{myQueueEntry ? t("leaveQueue") : room.queuePaused ? "Đang tạm dừng" : "Xếp hàng"}</span></button>
+            {canModerate && <button type="button" className={room.queuePaused ? "active" : ""} disabled={setQueuePaused.isPending} onClick={() => setQueuePaused.mutate(!room.queuePaused)} aria-pressed={room.queuePaused}><Icon name="queue" size={15}/><span>{room.queuePaused ? "Mở lại xếp hàng" : "Tạm dừng xếp hàng"}</span></button>}
+            {canModerate && <button type="button" className={room.micHoldByUserId === me.id ? "active" : ""} onClick={() => setMicHold.mutate(room.micHoldByUserId !== me.id)} disabled={setMicHold.isPending || me.muted || isMyTurn || Boolean(room.micHoldByUserId && room.micHoldByUserId !== me.id)} aria-pressed={room.micHoldByUserId === me.id}><Icon name="mic" size={15}/><span>{room.micHoldByUserId === me.id ? "Gỡ giữ micro" : "Giữ micro"}</span></button>}
+            <button type="button" onClick={() => setQueueStageCollapsed((collapsed) => !collapsed)} aria-pressed={queueStageCollapsed}><Icon name="collapse" size={15}/><span>{queueStageCollapsed ? (locale === "vi" ? "Mở rộng" : "Expand") : (locale === "vi" ? "Thu lại" : "Collapse")}</span></button>
+          </div>}
+        </div>
       </div>
       <div className="queue-roster">
       {room.micMode === "queue" && <>
@@ -1828,6 +1958,7 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
           <span>{currentSinger.endsAt ? t("nowOnMic") : t("upNext")}</span>
           <div className="queue-person-line">
             <strong title={`${t("userId")} #${currentSinger.userId}`}>{currentSinger.name}{isMyTurn ? ` (${t("you")})` : ""}</strong>
+            {canModerate && <div className="queue-person-menu"><button type="button" aria-label={`Quản lý ${currentSinger.name}`} aria-expanded={queueMenuUserId === currentSinger.userId} onClick={() => setQueueMenuUserId((id) => id === currentSinger.userId ? null : currentSinger.userId)}><Icon name="gear" size={15}/></button>{queueMenuUserId === currentSinger.userId && <div role="menu"><button type="button" role="menuitem" disabled={addQueueTurnTime.isPending} onClick={() => addQueueTurnTime.mutate(currentSinger.userId)}>Thêm thời gian (+{Math.round(room.defaultMicSeconds / 60)} phút)</button><button type="button" role="menuitem" className="danger" disabled={manageQueue.isPending} onClick={() => { setQueueMenuUserId(null); manageQueue.mutate({ action: "remove", targetUserId: currentSinger.userId }); }}>Đá khỏi hàng</button></div>}</div>}
             <div className="queue-entry-actions">
               {canModerate && currentSinger.endsAt && <><button type="button" onClick={() => addMicTime.mutate(1)} disabled={addMicTime.isPending} aria-label={`${t("addTime")} 1 ${t("min")} ${currentSinger.name}`}>+1 {t("min")}</button><button type="button" onClick={() => addMicTime.mutate(5)} disabled={addMicTime.isPending} aria-label={`${t("addTime")} 5 ${t("min")} ${currentSinger.name}`}>+5 {t("min")}</button></>}
               {isMyTurn ? <button type="button" className="danger" onClick={() => leaveQueue.mutate()} disabled={leaveQueue.isPending}>{t("endMyTurn")}</button> : canManageQueue && <button type="button" className="danger" disabled={manageQueue.isPending} onClick={() => setPendingConfirmation({ kind: "queue-remove", userId: currentSinger.userId, name: currentSinger.name })} aria-label={`${t("removeFromQueue")} ${currentSinger.name}`}>{t("removeFromQueue")}</button>}
@@ -1841,9 +1972,10 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
         </div>
       </div> : <p className="queue-empty">{t("noWaiting")}</p>}
       {queue.length > 1 && <ol className="queue-list">{queue.filter((entry) => !entry.isCurrent).map((entry, index) => <li key={entry.id}>
-        <span>{entry.position - 1}</span>
+        <span>{index + 1}</span>
         <div className="queue-person-line">
           <strong title={`${t("userId")} #${entry.userId}`}>{entry.name}{entry.userId === me.id ? ` (${t("you")})` : ""}</strong>
+          {canModerate && <div className="queue-person-menu"><button type="button" aria-label={`Quản lý ${entry.name}`} aria-expanded={queueMenuUserId === entry.userId} onClick={() => setQueueMenuUserId((id) => id === entry.userId ? null : entry.userId)}><Icon name="gear" size={15}/></button>{queueMenuUserId === entry.userId && <div role="menu"><button type="button" role="menuitem" disabled={addQueueTurnTime.isPending} onClick={() => addQueueTurnTime.mutate(entry.userId)}>Thêm thời gian (+{Math.round(room.defaultMicSeconds / 60)} phút)</button><button type="button" role="menuitem" className="danger" disabled={manageQueue.isPending} onClick={() => { setQueueMenuUserId(null); manageQueue.mutate({ action: "remove", targetUserId: entry.userId }); }}>Đá khỏi hàng</button></div>}</div>}
           <small>{t("waiting")}</small>
           {(canModerate || entry.userId === me.id) && <div className="queue-entry-actions">
             {canModerate && index > 0 && <button type="button" disabled={manageQueue.isPending} onClick={() => manageQueue.mutate({ action: "moveUp", targetUserId: entry.userId })} aria-label={`${t("moveUp")} ${entry.name}`}>{t("moveUp")}</button>}
@@ -1852,7 +1984,7 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
           </div>}
         </div>
       </li>)}</ol>}
-      {!myQueueEntry && <div className="queue-self-row"><strong>{me.name} ({t("you")})</strong><button className="queue-join" onClick={() => joinQueue.mutate()} disabled={joinQueue.isPending || me.muted}><Icon name="mic" size={17}/>{joinQueue.isPending ? t("joining") : t("joinMicQueue")}</button></div>}
+      {!myQueueEntry && <div className="queue-self-row"><strong>{me.name} ({t("you")})</strong><button className="queue-join" onClick={() => joinQueue.mutate()} disabled={joinQueue.isPending || me.muted || room.queuePaused}><Icon name="mic" size={17}/>{joinQueue.isPending ? t("joining") : room.queuePaused ? "Hàng chờ đang tạm dừng" : t("joinMicQueue")}</button></div>}
       {myQueueEntry && !isMyTurn && <p className="queue-position-note">{locale === "vi" ? `Bạn đang ở vị trí #${myQueueEntry.position - 1} ${t("inLine")}` : `You’re #${myQueueEntry.position - 1} ${t("inLine")}`}</p>}
       {isMyTurn && !voiceOn && <p className="queue-position-note">{t("yourTurnTap")}</p>}
       </>}
@@ -1860,13 +1992,12 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
       {joinQueue.data?.error && <Notice tone="error">{joinQueue.data.error}</Notice>}
       {leaveQueue.data?.error && <Notice tone="error">{leaveQueue.data.error}</Notice>}
       {setDefaultTime.data?.error && <Notice tone="error">{setDefaultTime.data.error}</Notice>}
-      {addMicTime.data?.error && <Notice tone="error">{addMicTime.data.error}</Notice>}
-      {manageQueue.data?.error && <Notice tone="error">{manageQueue.data.error}</Notice>}
+      {(addMicTime.data?.error || addQueueTurnTime.data?.error) && <Notice tone="error">{addMicTime.data?.error || addQueueTurnTime.data?.error}</Notice>}
+      {(manageQueue.data?.error || setQueuePaused.data?.error || setMicHold.data?.error) && <Notice tone="error">{manageQueue.data?.error || setQueuePaused.data?.error || setMicHold.data?.error}</Notice>}
       </div>
     </section>
     </div>
-    <details ref={participantsPanelRef} className="participants-panel" open>
-      <summary><span><Icon name="users" size={18}/>{t("peopleRoles")}</span><strong>{participants.length}</strong></summary>
+    <section ref={participantsPanelRef} className="participants-panel" aria-label={t("peopleRoom")}>
       <label className="participant-search"><span className="sr-only">{locale === "vi" ? "Tìm người trong phòng" : "Search people in room"}</span><input type="search" value={participantSearch} onChange={(event) => setParticipantSearch(event.currentTarget.value)} placeholder={locale === "vi" ? "Nhập tên người cần tìm…" : "Search people…"}/></label>
       <div className="participants-list">{visibleParticipants.map((person) => {
         const promotionChoices = promotableTiers(person);
@@ -1880,7 +2011,7 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
         const canRenamePerson = person.id === me.id || canManageRoomSettings;
         const showBan = person.id !== me.id && canManageRoomSettings;
         return <div className={`participant ${shirtRole(person)}`} key={person.id} title={`${t("userId")} #${person.id}`}>
-          <span className={`role-shirt ${shirtRole(person)}`} aria-label={tierLabel(person.roomTier)}><Icon name="shirt" size={22}/></span>
+          <span className={`role-shirt ${shirtRole(person)}`} aria-label={`${tierLabel(person.roomTier)} · ${person.gender === "female" ? t("female") : person.gender === "male" ? t("male") : t("notSet")}`}><Icon name={person.gender === "female" ? "dress" : "shirt"} size={22}/></span>
           <div className="person-info"><strong>{person.name}{person.id === me.id ? ` (${t("you")})` : ""}{person.id === me.id && <button type="button" className="person-name-edit" onClick={() => { setRoomDisplayNameDraft(me.name); setEditingRoomUserId(me.id); }} aria-label={t("editRoomName")}><Icon name="edit" size={13}/></button>}</strong>{(person.voiceActive || person.muted) && <span>{person.voiceActive ? t("onMic") : t("mutedByModerator")}</span>}</div>
           <div className="participant-menu-wrap">
             <button type="button" className="participant-menu-toggle" aria-label={`${t("personSettings")}: ${person.name}`} aria-expanded={participantMenuId === person.id} aria-haspopup="menu" onClick={() => setParticipantMenuId((openId) => openId === person.id ? null : person.id)}><Icon name="gear" size={17}/></button>
@@ -1907,33 +2038,19 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
           </div>}
         </div>;
       })}</div>
+      {!room.parentRoomId && <section className="subroom-section" aria-labelledby="subroom-heading">
+        <header><div><strong id="subroom-heading">Phòng nhỏ</strong><span>{subrooms.length}</span></div>{canCreateSubroom && <button type="button" onClick={() => setCreatingSubroom(true)}><Icon name="plus" size={15}/>Tạo phòng nhỏ</button>}</header>
+        {subrooms.length === 0 ? <p className="subroom-empty">Chưa có phòng nhỏ.</p> : <div className="subroom-list">{subrooms.map((subroom) => <button type="button" key={subroom.id} onClick={() => subroom.isPrivate ? setPrivateSubroom({ id: subroom.id, name: subroom.name }) : joinSubroom.mutate({ roomId: subroom.id })} disabled={joinSubroom.isPending}>
+          <span className="subroom-main"><strong>{subroom.name}</strong><small>{subroom.micMode === "free" ? "Chế Độ Tự Do" : "Chế Độ Xếp Hàng"}</small></span>
+          <span className="subroom-count">{subroom.isPrivate && <Icon name="shield" size={13}/>}<b>{subroom.onlineCount}</b> người</span>
+        </button>)}</div>}
+        {joinSubroom.data?.error && <Notice tone="error">{joinSubroom.data.error}</Notice>}
+      </section>}
       {(changeRole.data?.error || manageBan.data?.error || sendFriend.data?.error || respondRoomFriend.data?.error) && <Notice tone="error">{changeRole.data?.error || manageBan.data?.error || sendFriend.data?.error || respondRoomFriend.data?.error}</Notice>}
-    </details>
+    </section>
     <section className="conversation" aria-label={t("conversation")}>
-      <div className="conversation-heading">
-        <h2>{t("conversation")}</h2>
-        {canManageRoomSettings && <details className="chat-background-settings">
-          <summary><Icon name="edit" size={14}/>{t("chatBackground")}</summary>
-          <div className="chat-background-controls">
-            <label><span>{t("chooseChatBackground")}</span><input type="color" value={room.chatBackground === "transparent" ? "#ffffff" : room.chatBackground} onChange={(event) => updateRoomChatBackground.mutate(event.currentTarget.value)} disabled={updateRoomChatBackground.isPending || updateRoomChatBackgroundImage.isPending} aria-label={t("chooseChatBackground")}/></label>
-            <button type="button" aria-pressed={!chatBackgroundImageUrl && room.chatBackground === "#ffffff"} onClick={() => updateRoomChatBackground.mutate("#ffffff")} disabled={updateRoomChatBackground.isPending || updateRoomChatBackgroundImage.isPending}>{t("whiteBackground")}</button>
-            <button type="button" aria-pressed={!chatBackgroundImageUrl && room.chatBackground === "transparent"} onClick={() => updateRoomChatBackground.mutate("transparent")} disabled={updateRoomChatBackground.isPending || updateRoomChatBackgroundImage.isPending}>{t("transparentBackground")}</button>
-            <fieldset className="wallpaper-presets" disabled={updateRoomChatBackground.isPending || updateRoomChatBackgroundImage.isPending}>
-              <legend>{updateRoomChatBackgroundImage.isPending ? t("applyingWallpaper") : t("standardWallpapers")}</legend>
-              <div>{CHAT_WALLPAPERS.map((wallpaper) => <button key={wallpaper.id} type="button" onClick={() => updateRoomChatBackgroundImage.mutate(wallpaper)} aria-pressed={room.chatBackgroundPreset === wallpaper.id} aria-label={t(wallpaper.nameKey)} title={t(wallpaper.nameKey)}><img src={wallpaper.src} alt=""/><span>{t(wallpaper.nameKey)}</span></button>)}</div>
-            </fieldset>
-            <label className={`background-photo-upload ${updateRoomChatBackgroundImage.isPending ? "pending" : ""}`} aria-label={chatBackgroundImageUrl ? t("changeBackgroundPhoto") : t("chooseBackgroundPhoto")}>
-              <Icon name="image" size={16}/><span>{chatBackgroundImageUrl ? t("changeBackgroundPhoto") : t("chooseBackgroundPhoto")}</span>
-              <input type="file" accept="image/jpeg,image/png,image/webp" disabled={updateRoomChatBackgroundImage.isPending || updateRoomChatBackground.isPending} onChange={(event) => { const input = event.currentTarget; const file = input.files?.[0]; if (file) updateRoomChatBackgroundImage.mutate(file); input.value = ""; }}/>
-            </label>
-            {chatBackgroundImageUrl && <label className="background-fade-control"><span>{t("backgroundFade")} <output htmlFor="background-fade-slider" aria-live="polite">{backgroundFadeDraft}%</output></span><input id="background-fade-slider" type="range" min="0" max="100" step="5" value={backgroundFadeDraft} aria-label={t("backgroundFade")} aria-valuetext={`${backgroundFadeDraft}%`} disabled={updateRoomChatBackgroundFade.isPending} onChange={(event) => setBackgroundFadeDraft(Number(event.currentTarget.value))} onPointerUp={(event) => updateRoomChatBackgroundFade.mutate(Number(event.currentTarget.value))} onKeyUp={(event) => updateRoomChatBackgroundFade.mutate(Number(event.currentTarget.value))}/></label>}
-            {chatBackgroundImageUrl && <button type="button" onClick={() => updateRoomChatBackgroundImage.mutate(null)} disabled={updateRoomChatBackgroundImage.isPending}>{t("removeBackgroundPhoto")}</button>}
-          </div>
-        </details>}
-      </div>
-      {(updateRoomChatBackground.data?.error || updateRoomChatBackgroundImage.data?.error || updateRoomChatBackgroundFade.data?.error) && <Notice tone="error">{updateRoomChatBackground.data?.error || updateRoomChatBackgroundImage.data?.error || updateRoomChatBackgroundFade.data?.error}</Notice>}
-      <div className={`messages ${chatBackgroundImageUrl ? "photo-background" : ""}`} ref={messageList} style={chatBackgroundStyle(room.chatBackground, chatBackgroundImageUrl, room.chatBackgroundImageFit, backgroundFadeDraft)}>{messages.length === 0 && <div className="first-message"><p>{t("noMessages")}</p><strong>{t("firstHello")}</strong></div>}{messages.map((message) => message.kind === "event" ? <div className="event-message" key={message.id}>{vietnameseRoomEvent(message.body)}</div> : <article className={`message ${message.userId === me.id ? "mine" : ""}`} key={message.id}><div className="message-meta"><strong>{message.name ?? t("formerMember")}</strong><time>{new Date(message.createdAt).toLocaleTimeString(locale === "vi" ? "vi-VN" : "en-US", { hour: "numeric", minute: "2-digit" })}</time></div>{message.imageUrl && <button type="button" className="chat-photo-thumbnail" aria-label={t("openChatPhoto")} onClick={() => setExpandedPhoto({ src: message.imageUrl ?? "", alt: `${t("chatPhoto")} ${message.name ?? t("formerMember")}` })}><img className="chat-photo" src={message.imageUrl} alt={`${t("chatPhoto")} ${message.name ?? t("formerMember")}`} loading="lazy" decoding="async"/></button>} {message.body && <p>{message.body}</p>}</article>)}</div>
-      <div className="room-announcement" role="status"><Icon name="mic" size={15}/><span>{room.micMode === "free" ? t("freeMode") : `${t("queueMode")} · ${Math.round(room.defaultMicSeconds / 60)} ${t("minuteTurns")}`} &nbsp;·&nbsp; {participants.length} {locale === "vi" ? "người đang trực tuyến" : "online"}</span></div>
+      <div className={`messages ${chatBackgroundImageUrl ? "photo-background" : ""}`} ref={messageList} style={chatBackgroundStyle(room.chatBackground, chatBackgroundImageUrl, room.chatBackgroundImageFit, backgroundFadeDraft)}>{messages.length === 0 && <div className="first-message"><p>{t("noMessages")}</p><strong>{t("firstHello")}</strong></div>}{messages.map((message) => message.kind === "event" ? <div className="event-message" key={message.id}>{vietnameseRoomEvent(message.body)}</div> : <article className={`message ${message.userId === me.id ? "mine" : ""}`} key={message.id}><div className="message-meta"><strong>{message.name ?? t("formerMember")}</strong><time>{new Date(message.createdAt).toLocaleTimeString(locale === "vi" ? "vi-VN" : "en-US", { hour: "numeric", minute: "2-digit" })}</time></div>{message.imageUrl && <button type="button" className="chat-photo-thumbnail" aria-label={t("openChatPhoto")} onClick={() => setExpandedPhoto({ src: message.imageUrl ?? "", alt: `${t("chatPhoto")} ${message.name ?? t("formerMember")}` })}><img className="chat-photo" src={message.imageUrl} alt={`${t("chatPhoto")} ${message.name ?? t("formerMember")}`} loading="lazy" decoding="async"/></button>} {message.body && <p style={chatTextCss(message.textStyle)}>{message.body}</p>}</article>)}</div>
+      <div className="room-announcement" role="status"><span>{room.micMode === "free" ? t("freeMode") : `${t("queueMode")} · ${Math.round(room.defaultMicSeconds / 60)} ${t("minuteTurns")}`} &nbsp;·&nbsp; {participants.length} {locale === "vi" ? "người đang trực tuyến" : "online"}</span></div>
       {emojiOpen && !me.muted && me.roomTier !== "visitor" && <div className="emoji-picker" role="group" aria-label={t("emojiPicker")}>
         {CHAT_EMOJIS.map((emoji) => <button type="button" key={emoji} onClick={() => insertEmoji(emoji)} aria-label={`${t("emojiPicker")}: ${emoji}`}>{emoji}</button>)}
       </div>}
@@ -1953,15 +2070,28 @@ function Room({ token, roomId, onBack, supportOpen, onToggleSupport }: { token: 
         const maySpeakNow = room.micMode === "free" || isMyTurn || canModerate;
         if (maySpeakNow) voiceOn ? void stopVoice() : void startVoice();
         else if (!myQueueEntry) joinQueue.mutate();
-      }} disabled={voiceStarting || presence.isPending || me.muted || joinQueue.isPending} aria-pressed={voiceOn}><Icon name={me.muted ? "mute" : "mic"} size={18}/><span>{me.muted ? t("muted") : voiceOn ? t("leaveMic") : room.micMode === "queue" && !isMyTurn && !canModerate ? (myQueueEntry ? t("waiting") : t("joinMicQueue")) : (locale === "vi" ? "Bấm để nói" : "Tap to talk")}</span></button>
+      }} disabled={voiceStarting || presence.isPending || me.muted || joinQueue.isPending || (room.micMode === "queue" && room.queuePaused && !myQueueEntry && !canModerate)} aria-pressed={voiceOn}><Icon name={me.muted ? "mute" : "mic"} size={18}/><span>{me.muted ? t("muted") : voiceOn ? t("leaveMic") : room.micMode === "queue" && !isMyTurn && !canModerate ? (myQueueEntry ? t("waiting") : t("joinMicQueue")) : (locale === "vi" ? "Bấm để nói" : "Tap to talk")}</span></button>
       <div className="room-status-actions">
         <button type="button" className={backgroundSoundOn ? "active" : ""} onClick={() => void toggleBackgroundSound()} disabled={backgroundSoundStarting || voiceStarting || me.muted || (room.micMode === "queue" && !isMyTurn && !canModerate)} aria-pressed={backgroundSoundOn}><Icon name="music" size={17}/><span>{locale === "vi" ? "Nhạc nền" : "Background music"}</span></button>
         <button type="button" className={recordingOn ? "active recording" : ""} onClick={() => void toggleRecording()} disabled={me.muted || (room.micMode === "queue" && !isMyTurn && !canModerate)} aria-pressed={recordingOn}><Icon name="record" size={17}/><span>{recordingOn ? (locale === "vi" ? "Dừng ghi" : "Stop") : (locale === "vi" ? "Ghi âm" : "Record")}</span></button>
-        <button type="button" onClick={() => setDesktopSidebarCollapsed((collapsed) => !collapsed)} aria-pressed={desktopSidebarCollapsed}><Icon name="collapse" size={17}/><span>{desktopSidebarCollapsed ? (locale === "vi" ? "Mở rộng" : "Expand") : (locale === "vi" ? "Rút gọn" : "Collapse")}</span></button>
+        <button type="button" onClick={() => setQueueStageCollapsed((collapsed) => !collapsed)} aria-pressed={queueStageCollapsed}><Icon name="collapse" size={17}/><span>{queueStageCollapsed ? (locale === "vi" ? "Mở rộng" : "Expand") : (locale === "vi" ? "Rút gọn" : "Collapse")}</span></button>
       </div>
     </nav>
     {expandedPhoto && <ChatPhotoDialog src={expandedPhoto.src} alt={expandedPhoto.alt} onClose={() => setExpandedPhoto(null)}/>} 
     {reportTarget && <ReportDialog key={`${reportTarget.type}-${reportTarget.id}`} token={token} target={reportTarget} onClose={() => setReportTarget(null)}/>} 
+    {creatingSubroom && <div className="dialog-backdrop" role="presentation"><form className="confirmation-dialog subroom-dialog" role="dialog" aria-modal="true" aria-labelledby="create-subroom-title" onSubmit={(event) => { event.preventDefault(); createSubroom.mutate(); }}>
+      <h2 id="create-subroom-title">Tạo phòng nhỏ</h2>
+      <label htmlFor="subroom-name">Tên phòng nhỏ</label><input id="subroom-name" value={subroomName} onChange={(event) => setSubroomName(event.currentTarget.value)} minLength={2} maxLength={42} autoFocus required/>
+      <label htmlFor="subroom-password">Mật khẩu <span>(không bắt buộc)</span></label><input id="subroom-password" type="password" value={subroomPassword} onChange={(event) => setSubroomPassword(event.currentTarget.value)} minLength={4} maxLength={72} placeholder="Để trống nếu ai cũng được vào"/>
+      {createSubroom.data?.error && <Notice tone="error">{createSubroom.data.error}</Notice>}
+      <div className="confirmation-actions"><button type="button" onClick={() => { setCreatingSubroom(false); setSubroomPassword(""); }}>Hủy</button><button className="primary-button" disabled={createSubroom.isPending}>{createSubroom.isPending ? "Đang tạo…" : "Tạo phòng"}</button></div>
+    </form></div>}
+    {privateSubroom && <div className="dialog-backdrop" role="presentation"><form className="confirmation-dialog subroom-dialog" role="dialog" aria-modal="true" aria-labelledby="private-subroom-title" onSubmit={(event) => { event.preventDefault(); joinSubroom.mutate({ roomId: privateSubroom.id, password: privateSubroomPassword }); }}>
+      <h2 id="private-subroom-title">{privateSubroom.name}</h2><p>Phòng nhỏ này có mật khẩu.</p>
+      <label htmlFor="private-subroom-password">Mật khẩu phòng nhỏ</label><input id="private-subroom-password" type="password" value={privateSubroomPassword} onChange={(event) => setPrivateSubroomPassword(event.currentTarget.value)} minLength={4} maxLength={72} autoFocus required/>
+      {joinSubroom.data?.error && <Notice tone="error">{joinSubroom.data.error}</Notice>}
+      <div className="confirmation-actions"><button type="button" onClick={() => { setPrivateSubroom(null); setPrivateSubroomPassword(""); }}>Hủy</button><button className="primary-button" disabled={joinSubroom.isPending}>{joinSubroom.isPending ? "Đang vào…" : "Vào phòng"}</button></div>
+    </form></div>}
     {pendingConfirmation && <ConfirmationDialog
       message={confirmationMessage}
       confirmLabel={confirmationLabel}
@@ -1991,5 +2121,5 @@ export function App() {
   const localeValue: LocaleContextValue = { locale, t: (key) => copy.vi[key] };
   const hasActiveSupportChat = Boolean(activeSupportChat.data?.ticket);
   const showSupportFab = Boolean(token) && roomId === null && !supportOpen;
-  return <LocaleContext.Provider value={localeValue}><div className={`app ${roomId ? "room-open" : ""}`}><SafeAreaTopScrim backgroundColor="var(--bg)"/>{!token ? <Welcome onReady={setToken}/> : roomId ? <Room token={token} roomId={roomId} onBack={() => setRoomId(null)} supportOpen={supportOpen} onToggleSupport={() => setSupportOpen((open) => !open)}/> : <Home token={token} onOpenRoom={setRoomId} onSignOut={signOut} supportOpen={supportOpen} onSetSupportOpen={setSupportOpen}/>} {showSupportFab && <button type="button" className={`support-fab ${hasActiveSupportChat ? "active-conversation" : ""}`} aria-label={copy[locale].contactSupport} onClick={() => setSupportOpen(true)}>?</button>} {token && roomId && supportOpen && <SupportChatPanel token={token} onClose={() => setSupportOpen(false)}/>}</div></LocaleContext.Provider>;
+  return <LocaleContext.Provider value={localeValue}><div className={`app ${roomId ? "room-open" : ""}`}><SafeAreaTopScrim backgroundColor="var(--bg)"/>{!token ? <Welcome onReady={setToken}/> : roomId ? <Room token={token} roomId={roomId} onBack={() => setRoomId(null)} onNavigateRoom={setRoomId} supportOpen={supportOpen} onToggleSupport={() => setSupportOpen((open) => !open)}/> : <Home token={token} onOpenRoom={setRoomId} onSignOut={signOut} supportOpen={supportOpen} onSetSupportOpen={setSupportOpen}/>} {showSupportFab && <button type="button" className={`support-fab ${hasActiveSupportChat ? "active-conversation" : ""}`} aria-label={copy[locale].contactSupport} onClick={() => setSupportOpen(true)}>?</button>} {token && roomId && supportOpen && <SupportChatPanel token={token} onClose={() => setSupportOpen(false)}/>}</div></LocaleContext.Provider>;
 }
