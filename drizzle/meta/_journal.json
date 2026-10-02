@@ -1,0 +1,223 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1790801670079,
+      "tag": "0001_initial",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1790801670079,
+      "tag": "0002_chat_rooms_roles_and_signaling",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790807114533,
+      "tag": "0003_add_room_karaoke_selections",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1790807783035,
+      "tag": "0004_add_room_mic_queue",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1790819382723,
+      "tag": "0005_add_password_authentication",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1790822036095,
+      "tag": "0006_add_synchronized_karaoke_playback",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1790829133682,
+      "tag": "0007_add_email_authentication_recovery",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1790830882986,
+      "tag": "0008_add_display_names",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1790831260996,
+      "tag": "0009_add_room_singer_hearts",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1790833063715,
+      "tag": "0010_add_admin_dashboard_controls",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1790833567067,
+      "tag": "0011_add_room_moderator_levels",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1790835053098,
+      "tag": "0012_add_credit_system",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1790835501595,
+      "tag": "0013_add_credit_packages_and_purchases",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1790835501595,
+      "tag": "0014_add_private_room_passwords",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1790836506204,
+      "tag": "0015_add_room_member_tiers",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1790837387117,
+      "tag": "0016_add_superadmin_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1790837591566,
+      "tag": "0017_widen_user_role_check",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1790839139005,
+      "tag": "0018_add_room_and_singer_cover_images",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1790840126503,
+      "tag": "0019_add_buy_credits_setting",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1790840838399,
+      "tag": "0020_add_reports_and_support_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1790841117573,
+      "tag": "0021_add_black_shirt_room_tier",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1790841788057,
+      "tag": "0022_add_report_attachments",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1790858031866,
+      "tag": "0023_add_chat_message_photos",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1790865836270,
+      "tag": "0024_add_chat_background",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1790866814774,
+      "tag": "0025_add_chat_background_photo",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1790869101463,
+      "tag": "0026_add_chat_background_image_fit",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1790869590614,
+      "tag": "0027_add_chat_background_preset",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1790952981253,
+      "tag": "0028_add_room_mic_mode",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1790962790339,
+      "tag": "0029_add_personal_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "6",
+      "when": 1790970315979,
+      "tag": "0030_add_room_bans_and_friends",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "6",
+      "when": 1790978002261,
+      "tag": "0031_restructure_room_roles",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+ALTER TABLE messages ADD COLUMN image_blob_key TEXT;
