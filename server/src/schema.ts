@@ -1,11 +1,18 @@
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text, uniqueIndex, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   displayName: text("display_name"),
   personalStatus: text("personal_status"),
+  gender: text("gender", { enum: ["male", "female"] }),
   singerCoverBlobKey: text("singer_cover_blob_key"),
+  chatFontFamily: text("chat_font_family", { enum: ["system", "serif", "rounded", "mono", "handwriting"] }),
+  chatFontSize: integer("chat_font_size"),
+  chatFontBold: integer("chat_font_bold", { mode: "boolean" }),
+  chatFontItalic: integer("chat_font_italic", { mode: "boolean" }),
+  chatFontUnderline: integer("chat_font_underline", { mode: "boolean" }),
+  chatFontColor: text("chat_font_color"),
   email: text("email"),
   emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
   sessionToken: text("session_token").notNull().unique(),
@@ -61,8 +68,11 @@ export const rooms = sqliteTable("rooms", {
   chatBackgroundFade: integer("chat_background_fade").notNull().default(75),
   chatBackgroundPreset: text("chat_background_preset", { enum: ["kawaii-cats", "dreamy-kitten", "pastel-clouds", "pastel-daisies"] }),
   createdBy: integer("created_by").notNull().references(() => users.id),
+  parentRoomId: integer("parent_room_id").references((): AnySQLiteColumn => rooms.id, { onDelete: "cascade" }),
   defaultMicSeconds: integer("default_mic_seconds").notNull().default(300),
   micMode: text("mic_mode", { enum: ["free", "queue"] }).notNull().default("queue"),
+  queuePaused: integer("queue_paused", { mode: "boolean" }).notNull().default(false),
+  micHoldByUserId: integer("mic_hold_by_user_id").references(() => users.id, { onDelete: "set null" }),
   level: integer("level").notNull().default(1),
   leveledAt: integer("leveled_at", { mode: "timestamp_ms" }),
   passwordHash: text("password_hash"),
@@ -74,7 +84,7 @@ export const rooms = sqliteTable("rooms", {
   deletedBy: integer("deleted_by").references(() => users.id),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-});
+}, (table) => [index("rooms_parent_idx").on(table.parentRoomId, table.deletedAt)]);
 
 export const memberships = sqliteTable("memberships", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -203,6 +213,7 @@ export const micQueue = sqliteTable("mic_queue", {
   joinedAt: integer("joined_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   startedAt: integer("started_at", { mode: "timestamp_ms" }),
   endsAt: integer("ends_at", { mode: "timestamp_ms" }),
+  extraSeconds: integer("extra_seconds").notNull().default(0),
 }, (table) => [uniqueIndex("mic_queue_room_user_idx").on(table.roomId, table.userId)]);
 
 export const roomHearts = sqliteTable("room_hearts", {

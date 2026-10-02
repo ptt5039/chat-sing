@@ -218,6 +218,20 @@
       "when": 1790978002261,
       "tag": "0031_restructure_room_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1790982102863,
+      "tag": "0032_add_subrooms",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1790983637416,
+      "tag": "0033_add_chat_text_formatting",
+      "breakpoints": true
     }
   ]
 }
