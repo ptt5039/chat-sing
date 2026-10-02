@@ -1,0 +1,13 @@
+node_modules/
+*.db
+*.db-shm
+*.db-wal
+blobs/
+audits/
+.harness/
+.bun-cache/
+.space-build*/
+client/dist/
+client/dist-cvm/
+server/dist/
+.env
